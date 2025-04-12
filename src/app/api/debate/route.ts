@@ -19,19 +19,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: Implement database storage
-    // For now, return a mock response
-    const mockDebateSession = {
-      id: "mock-session-id",
-      timestamp: new Date().toISOString(),
-      transcript,
-      analysis,
-      participants: participants || [],
-      metadata: metadata || {},
-      status: "completed"
-    };
+    // Save debate session to database
+    const debateSession = await prisma.debateSession.create({
+      data: {
+        transcript,
+        analysis,
+        participants: participants || [],
+        metadata: metadata || {},
+        status: "completed"
+      }
+    });
 
-    return NextResponse.json(mockDebateSession);
+    return NextResponse.json(debateSession);
   } catch (error) {
     console.error('Error saving debate session:', error);
     return NextResponse.json(

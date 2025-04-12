@@ -105,7 +105,7 @@ function MeetingRoom() {
 
         <ResizablePanel defaultSize={65} minSize={25}>
           <DebatePage/>
-          <h1>Transcription Goes here</h1>
+          <h1>Argument Analysis Goes here</h1>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

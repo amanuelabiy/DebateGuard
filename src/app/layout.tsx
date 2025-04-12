@@ -1,4 +1,9 @@
-import { ClerkProvider } from "@clerk/nextjs";
+import {
+  ClerkProvider,
+  RedirectToSignIn,
+  SignedIn,
+  SignedOut,
+} from "@clerk/nextjs";
 import type { Metadata } from "next";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { Inter } from "next/font/google";
@@ -21,10 +26,8 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="dark">
         <body className={`${inter.className} bg-[#0D1117] text-[#E5E7EB]`}>
-          <StreamClientProvider>
-            {children}
-            <Toaster />
-          </StreamClientProvider>
+          {children}
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

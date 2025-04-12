@@ -1,6 +1,11 @@
 // pages/api/analyze.js
 
 import { NextRequest, NextResponse } from 'next/server';
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,57 +14,62 @@ export async function POST(request: NextRequest) {
 
     if (!transcriptSegment) {
       return NextResponse.json(
-        { success: false, error: 'Missing transcriptSegment in request body.' },
+        { error: "No transcript provided" },
         { status: 400 }
       );
     }
 
-    // Craft the prompt using the received transcript segment
-    // context can contain additional info like speaker names, debate session ID, etc.
-    const prompt = `Below is a segment of a debate transcript:
-    
-"${transcriptSegment}"
-  
-Please analyze the segment for any logical fallacies (such as ad hominem, straw man, false dichotomy, etc.) or bad-faith debate tactics. 
-Provide a mediator-style response that includes:
-- A list of detected fallacies (if any).
-- Suggestions on how both parties can reframe their argument constructively.
-- General tone analysis and recommendations for de-escalation if needed.`;
+    // Analyze the transcript using ChatGPT
+    const analysis = await analyzeTranscript(transcriptSegment, context);
 
-    // Call the OpenAI API (for example, GPT-4) with the prompt
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: "You are a debate mediator who offers constructive feedback." },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-      }),
+    return NextResponse.json({
+      success: true,
+      analysis,
     });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, error: data.error?.message || 'AI analysis failed.' },
-        { status: response.status }
-      );
-    }
-
-    // Extract the response text from the AI
-    const analysis = data.choices[0].message.content;
-    return NextResponse.json({ success: true, analysis });
   } catch (error) {
-    console.error('Error during AI analysis:', error);
+    console.error("Error in analyze API:", error);
     return NextResponse.json(
-      { success: false, error: 'Internal Server Error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
+}
+
+async function analyzeTranscript(transcript: string, context: any) {
+  const prompt = `
+You are a debate analysis assistant. Analyze the following transcript for logical fallacies.
+
+For each fallacy you find:
+1. Name the fallacy
+2. Quote the exact sentence that triggered it
+3. Explain how to fix it
+
+Format your response as:
+FALLACY: [Name of fallacy]
+TRIGGER: [Exact quote]
+FIX: [How to fix it]
+
+If no fallacies are found, respond with "No logical fallacies detected."
+
+Transcript:
+${transcript}
+`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content: "You are a debate analysis assistant that identifies logical fallacies in arguments.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0.3,
+    max_tokens: 1000,
+  });
+
+  return response.choices[0].message.content;
 }

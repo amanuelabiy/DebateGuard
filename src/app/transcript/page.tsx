@@ -4,16 +4,27 @@ import { useState, useRef, useEffect } from 'react';
 import { AudioRecorder } from '@/lib/audioRecorder';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { Mic, Square, Upload, Video, X, Check, AlertCircle } from 'lucide-react';
+import { AnalysisResult } from '@/types';
 
 export default function TranscriptPage() {
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState<string>('');
+  const [transcript, setTranscript] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [segments, setSegments] = useState<{ text: string; timestamp: Date }[]>([]);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingStartTimeRef = useRef<number | null>(null);
   
   // Use the speech recognition hook
   const {
@@ -27,9 +38,21 @@ export default function TranscriptPage() {
     onResult: (text) => {
       // You can add additional processing here if needed
       console.log('Live transcription update:', text);
+      
+      // Update transcript with new text
+      if (text && text.trim()) {
+        setTranscript(prev => {
+          // Only append if it's new content
+          if (prev && !prev.endsWith(text)) {
+            return prev + "\n" + text;
+          }
+          return text;
+        });
+      }
     },
     onError: (error) => {
       console.error('Speech recognition error:', error);
+      setError(`Speech recognition error: ${error}`);
     },
     continuous: true,
     language: 'en-US'
@@ -41,8 +64,56 @@ export default function TranscriptPage() {
       if (isListening) {
         stopListening();
       }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, [isListening, stopListening]);
+
+  // Handle timer for 30-second recording window
+  useEffect(() => {
+    if (isRecording) {
+      // Start the timer
+      setTimeLeft(30);
+      recordingStartTimeRef.current = Date.now();
+      
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            // Time's up, stop recording
+            stopRecording();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      // Clear the timer when recording stops
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isRecording]);
+
+  // Update transcript when live transcription changes
+  useEffect(() => {
+    if (liveTranscript) {
+      setTranscript(prev => {
+        // Only append if it's new content
+        if (prev && !prev.endsWith(liveTranscript)) {
+          return prev + "\n" + liveTranscript;
+        }
+        return liveTranscript;
+      });
+    }
+  }, [liveTranscript]);
 
   const startRecording = async () => {
     if (!audioRecorderRef.current) {
@@ -52,56 +123,193 @@ export default function TranscriptPage() {
     const success = await audioRecorderRef.current.startRecording();
     if (success) {
       setIsRecording(true);
+      // Start speech recognition when recording starts
+      startListening();
+      // Reset transcript
+      setTranscript("");
+      resetLiveTranscript();
+      setError(null);
     }
   };
 
   const stopRecording = async () => {
     if (!audioRecorderRef.current) return;
     
+    // Stop speech recognition first
+    stopListening();
+    
     const audioBlob = await audioRecorderRef.current.stopRecording();
     setIsRecording(false);
+    
+    // Create a segment with the final transcript
+    if (transcript && transcript.trim()) {
+      const newSegment = {
+        text: transcript,
+        timestamp: new Date()
+      };
+      
+      setSegments(prev => [...prev, newSegment]);
+      
+      // Save the segment to the database
+      if (conversationId) {
+        saveSegment(transcript);
+      }
+      
+      // Analyze the transcript for fallacies
+      analyzeTranscript(transcript);
+    }
     
     await sendAudioToAPI(audioBlob);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const analyzeTranscript = async (text: string) => {
+    if (!text || !text.trim()) return;
     
-    // Reset states
-    setUploadError(null);
-    setUploadSuccess(false);
-    setUploadProgress(0);
-    setIsUploading(true);
-    
-    // Validate file type
-    const validTypes = ['audio/mp3', 'audio/wav', 'audio/webm', 'audio/mpeg', 'audio/ogg'];
-    if (!validTypes.includes(file.type)) {
-      setUploadError(`Unsupported file type: ${file.type}. Please upload MP3, WAV, or WebM files.`);
-      setIsUploading(false);
-      return;
-    }
-    
-    // Validate file size (max 25MB)
-    if (file.size > 25 * 1024 * 1024) {
-      setUploadError('File too large. Maximum size is 25MB.');
-      setIsUploading(false);
-      return;
-    }
+    setIsAnalyzing(true);
+    setError(null);
     
     try {
-      await sendAudioToAPI(file);
-      setUploadSuccess(true);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      setUploadError('Failed to upload file. Please try again.');
-    } finally {
-      setIsUploading(false);
-      
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcriptSegment: text,
+          context: { source: 'recording' }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to analyze transcript");
       }
+
+      const data = await response.json();
+      setAnalysis(data.analysis);
+    } catch (error) {
+      console.error("Error analyzing transcript:", error);
+      setError("Failed to analyze transcript. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Save segments to the database
+  const saveSegment = async (text: string) => {
+    if (!conversationId || !text.trim()) return;
+    
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversationId,
+          segment: {
+            text,
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save segment");
+      }
+    } catch (error) {
+      console.error("Error saving segment:", error);
+      setError("Failed to save transcript segment");
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setTranscript("");
+      setAnalysis(null);
+      setError(null);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setError(null);
+      const response = await fetch("/api/transcript", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to transcribe file");
+      }
+
+      const data = await response.json();
+      setTranscript(data.transcript);
+    } catch (error) {
+      setError("Error transcribing file. Please try again.");
+      console.error("Error:", error);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!transcript) return;
+
+    try {
+      setIsAnalyzing(true);
+      setError(null);
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ transcript }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to analyze transcript");
+      }
+
+      const data = await response.json();
+      setAnalysis(data);
+    } catch (error) {
+      setError("Error analyzing transcript. Please try again.");
+      console.error("Error:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleStartNewConversation = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create conversation");
+      }
+
+      const data = await response.json();
+      setConversationId(data.id);
+      setTranscript("");
+      setAnalysis(null);
+      setError(null);
+    } catch (error) {
+      setError("Error creating new conversation. Please try again.");
+      console.error("Error:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -158,14 +366,16 @@ export default function TranscriptPage() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Audio Transcription</h1>
-      
-      <div className="flex flex-col gap-6 mb-6">
-        <div className="flex gap-4">
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Debate Transcript Analysis</h1>
+
+      {/* Live Transcription Section */}
+      <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Live Transcription</h2>
+        <div className="flex gap-4 mb-4">
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md ${
+            className={`px-4 py-2 rounded-md ${
               isRecording 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : 'bg-green-500 hover:bg-green-600'
@@ -183,120 +393,146 @@ export default function TranscriptPage() {
               </>
             )}
           </button>
-          
           <button
-            onClick={isListening ? stopListening : startListening}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md ${
-              isListening 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-purple-500 hover:bg-purple-600'
-            } text-white transition-colors`}
+            onClick={handleStartNewConversation}
+            disabled={isSaving}
+            className="px-4 py-2 rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors disabled:opacity-50"
           >
-            {isListening ? (
-              <>
-                <Square className="h-5 w-5" />
-                Stop Live Transcription
-              </>
-            ) : (
-              <>
-                <Video className="h-5 w-5" />
-                Start Live Transcription
-              </>
-            )}
+            {isSaving ? "Creating..." : "New Conversation"}
           </button>
         </div>
         
-        <div className="border-t border-gray-200 pt-4">
-          <h2 className="text-lg font-semibold mb-2">Or Upload an Audio File</h2>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="audio/*"
-                className="hidden"
-                id="audio-upload"
-                disabled={isUploading}
-              />
-              <label
-                htmlFor="audio-upload"
-                className={`flex items-center gap-2 px-4 py-2 rounded-md ${
-                  isUploading 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
-                } text-white transition-colors`}
-              >
-                <Upload className="h-5 w-5" />
-                {isUploading ? 'Uploading...' : 'Upload Audio File'}
-              </label>
-              <span className="text-sm text-gray-500">
-                Supported formats: MP3, WAV, WebM (max 25MB)
-              </span>
+        {/* Timer Display */}
+        {isRecording && (
+          <div className="mb-4 flex items-center">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000" 
+                style={{ width: `${(timeLeft / 30) * 100}%` }}
+              ></div>
             </div>
-            
-            {isUploading && (
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
-              </div>
-            )}
-            
-            {uploadError && (
-              <div className="flex items-center gap-2 text-red-500 bg-red-50 p-3 rounded-md">
-                <AlertCircle className="h-5 w-5" />
-                <span>{uploadError}</span>
-              </div>
-            )}
-            
-            {uploadSuccess && (
-              <div className="flex items-center gap-2 text-green-500 bg-green-50 p-3 rounded-md">
-                <Check className="h-5 w-5" />
-                <span>File uploaded and transcribed successfully!</span>
-              </div>
-            )}
+            <span className="ml-2 text-sm font-medium">{timeLeft}s</span>
           </div>
+        )}
+        
+        {/* Speech Recognition Error */}
+        {speechError && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md flex items-center">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {speechError}
+          </div>
+        )}
+        
+        {/* Live Transcript Display */}
+        <div className="mt-4 p-4 bg-gray-50 rounded-md">
+          <h3 className="text-lg font-medium mb-2">Live Transcript</h3>
+          <p className="whitespace-pre-wrap min-h-[100px]">
+            {transcript || (isRecording ? "Listening..." : "No transcript yet")}
+          </p>
         </div>
       </div>
 
-      {transcript && (
-        <div className="bg-gray-100 p-4 rounded-md mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold">File Transcript</h2>
-            <button 
-              onClick={clearTranscript}
-              className="text-gray-500 hover:text-gray-700"
-              title="Clear transcript"
+      {/* File Upload Section */}
+      <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Upload Audio File</h2>
+        <div className="flex items-center gap-4">
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={handleFileChange}
+            className="hidden"
+            ref={fileInputRef}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            <Upload className="h-5 w-5" />
+            Choose File
+          </button>
+          {file && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{file.name}</span>
+              <button
+                onClick={handleFileUpload}
+                disabled={isUploading}
+                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
+              >
+                {isUploading ? "Uploading..." : "Upload"}
+              </button>
+              <button
+                onClick={() => setFile(null)}
+                className="p-1 text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {/* Upload Progress */}
+        {isUploading && (
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600 mt-1">{uploadProgress}% uploaded</p>
+          </div>
+        )}
+        
+        {/* Upload Error */}
+        {uploadError && (
+          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md flex items-center">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {uploadError}
+          </div>
+        )}
+        
+        {/* Upload Success */}
+        {uploadSuccess && (
+          <div className="mt-4 p-3 bg-green-100 text-green-700 rounded-md flex items-center">
+            <Check className="h-5 w-5 mr-2" />
+            File uploaded successfully!
+          </div>
+        )}
+      </div>
+
+      {/* Transcript Display */}
+      {transcript && !isRecording && (
+        <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Transcript</h2>
+          <div className="p-4 bg-gray-50 rounded-md">
+            <p className="whitespace-pre-wrap">{transcript}</p>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
-              <X className="h-5 w-5" />
+              {isAnalyzing ? "Analyzing..." : "Analyze"}
             </button>
           </div>
-          <p className="whitespace-pre-wrap">{transcript}</p>
         </div>
       )}
-      
-      {liveTranscript && (
-        <div className="bg-blue-100 p-4 rounded-md">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold">Live Transcript</h2>
-            <button 
-              onClick={resetLiveTranscript}
-              className="text-gray-500 hover:text-gray-700"
-              title="Clear transcript"
-            >
-              <X className="h-5 w-5" />
-            </button>
+
+      {/* Analysis Results */}
+      {analysis && (
+        <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+          <div className="p-4 bg-gray-50 rounded-md">
+            <p className="whitespace-pre-wrap">{analysis}</p>
           </div>
-          <p className="whitespace-pre-wrap text-gray-800">{liveTranscript}</p>
         </div>
       )}
-      
-      {speechError && (
-        <div className="mt-4 flex items-center gap-2 text-red-500 bg-red-50 p-3 rounded-md">
-          <AlertCircle className="h-5 w-5" />
-          <span>{speechError}</span>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-8 p-4 bg-red-100 text-red-700 rounded-md">
+          <p>{error}</p>
         </div>
       )}
     </div>

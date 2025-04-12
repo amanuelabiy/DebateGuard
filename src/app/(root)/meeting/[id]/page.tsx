@@ -1,7 +1,5 @@
 "use client";
 
-import MeetingModal from "@/components/MeetingModal";
-import Sidebar from "@/components/Sidebar";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";

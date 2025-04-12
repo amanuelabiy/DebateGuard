@@ -18,7 +18,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
-        <body className={`${inter.className} bg-[#0D1117] text-[#E5E7EB]`}>
+        <body 
+          className={`${inter.className} bg-[#0D1117] text-[#E5E7EB]`}
+          suppressHydrationWarning
+        >
           {children}
         </body>
       </html>

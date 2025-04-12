@@ -1,7 +1,5 @@
-import { redirect } from "next/navigation";
+import AnimatedPage from '@/components/AnimatedPage';
 
 export default function Home() {
-  redirect("/meetings");
-  
-  return null;
+  return <AnimatedPage />;
 }

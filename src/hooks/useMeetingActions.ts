@@ -1,32 +1,30 @@
 import { useRouter } from "next/navigation";
-import { useStreamVideoClient } from "@stream-io/video-react-sdk";
 import toast from "react-hot-toast";
+import { StreamChat } from "stream-chat";
 
 const useMeetingActions = () => {
   const router = useRouter();
-  const client = useStreamVideoClient();
-
-  console.log("Client is initialized", client);
 
   const createInstantMeeting = async () => {
-    console.log("Creating lol instant meeting");
-    if (!client) return;
-    console.log("Client is initialized");
-
     try {
-      const id = crypto.randomUUID();
-      const call = client.call("default", id);
-
-      await call.getOrCreate({
-        data: {
-          starts_at: new Date().toISOString(),
-          custom: {
-            description: "Instant Meeting",
-          },
+      // Get Stream token
+      const tokenResponse = await fetch('/api/stream');
+      if (!tokenResponse.ok) {
+        throw new Error('Failed to get Stream token');
+      }
+      const { token, apiKey, userId } = await tokenResponse.json();
+      
+      // Initialize Stream client with token
+      const client = StreamChat.getInstance(apiKey);
+      await client.connectUser(
+        {
+          id: userId,
         },
-      });
-
-      router.push(`/meeting/${call.id}`);
+        token
+      );
+      
+      const id = crypto.randomUUID();
+      router.push(`/meeting/${id}`);
       toast.success("Meeting Created");
     } catch (error) {
       console.error(error);
@@ -35,12 +33,10 @@ const useMeetingActions = () => {
   };
 
   const joinMeeting = (callId: string) => {
-    if (!client)
-      return toast.error("Failed to join meeting. Please try again.");
     router.push(`/meeting/${callId}`);
   };
 
   return { createInstantMeeting, joinMeeting };
 };
 
-export default useMeetingActions;
+export default useMeetingActions; 

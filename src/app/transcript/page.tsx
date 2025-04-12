@@ -4,18 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import { AudioRecorder } from '@/lib/audioRecorder';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { Mic, Square, Upload, Video, X, Check, AlertCircle } from 'lucide-react';
-import { AnalysisResult } from '@/types';
-
-interface TranscriptSegment {
-  text: string;
-  speakerId?: string;
-  timestamp: string;
-}
 
 export default function TranscriptPage() {
-  const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
-  const [currentSpeaker, setCurrentSpeaker] = useState<string>('speaker1');
   const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -24,17 +16,10 @@ export default function TranscriptPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [segments, setSegments] = useState<{ text: string; timestamp: Date; duration: number }[]>([]);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const recordingStartTimeRef = useRef<number | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   
   // Use the speech recognition hook
   const {
@@ -45,18 +30,12 @@ export default function TranscriptPage() {
     resetTranscript: resetLiveTranscript,
     error: speechError
   } = useSpeechRecognition({
-    onResult: (result) => {
-      if (result) {
-        setTranscript(prev => [...prev, {
-          text: result,
-          speakerId: currentSpeaker,
-          timestamp: new Date().toISOString()
-        }]);
-      }
+    onResult: (text) => {
+      // You can add additional processing here if needed
+      console.log('Live transcription update:', text);
     },
     onError: (error) => {
       console.error('Speech recognition error:', error);
-      setError(`Speech recognition error: ${error}`);
     },
     continuous: true,
     language: 'en-US'
@@ -68,234 +47,74 @@ export default function TranscriptPage() {
       if (isListening) {
         stopListening();
       }
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
     };
   }, [isListening, stopListening]);
-
-  // Handle timer for 30-second recording window
-  useEffect(() => {
-    if (isRecording) {
-      // Start the timer
-      setTimeLeft(30);
-      recordingStartTimeRef.current = Date.now();
-      
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            // Time's up, stop recording
-            stopRecording();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      // Clear the timer when recording stops
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isRecording]);
 
   // Update transcript when live transcription changes
   useEffect(() => {
     if (liveTranscript) {
-      const newSegment: TranscriptSegment = {
-        text: liveTranscript,
-        speakerId: currentSpeaker,
-        timestamp: new Date().toISOString()
-      };
-      setTranscript(prev => [...prev, newSegment]);
+      setTranscript(prev => prev + (prev ? "\n" : "") + liveTranscript);
     }
-  }, [liveTranscript, currentSpeaker]);
+  }, [liveTranscript]);
 
-  const toggleSpeaker = () => {
-    setCurrentSpeaker(prev => prev === 'speaker1' ? 'speaker2' : 'speaker1');
-  };
+  // Save transcript segment when it changes
+  useEffect(() => {
+    if (liveTranscript && conversationId) {
+      saveSegment(liveTranscript);
+    }
+  }, [liveTranscript, conversationId]);
 
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        const formData = new FormData();
-        formData.append('audio', audioBlob);
-        formData.append('speakerId', currentSpeaker);
-
-        try {
-          const response = await fetch('/api/transcript', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to transcribe audio');
-          }
-
-          const data = await response.json();
-          setTranscript(prev => [...prev, {
-            text: data.text,
-            speakerId: data.speakerId || currentSpeaker,
-            timestamp: new Date().toISOString()
-          }]);
-        } catch (error) {
-          setError(error instanceof Error ? error.message : 'Failed to transcribe audio');
-        }
-      };
-
-      mediaRecorder.start(1000);
+    if (!audioRecorderRef.current) {
+      audioRecorderRef.current = new AudioRecorder();
+    }
+    
+    const success = await audioRecorderRef.current.startRecording();
+    if (success) {
       setIsRecording(true);
-      startListening();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to start recording');
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-    }
+  const stopRecording = async () => {
+    if (!audioRecorderRef.current) return;
+    
+    const audioBlob = await audioRecorderRef.current.stopRecording();
     setIsRecording(false);
-    stopListening();
-  };
-
-  const analyzeTranscript = async (text: string) => {
-    if (!text || !text.trim()) return;
     
-    setIsAnalyzing(true);
-    setError(null);
-    
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transcriptSegment: text,
-          context: { source: 'recording' }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to analyze transcript");
-      }
-
-      const data = await response.json();
-      setAnalysis(data.analysis);
-    } catch (error) {
-      console.error("Error analyzing transcript:", error);
-      setError("Failed to analyze transcript. Please try again.");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  // Save segments to the database
-  const saveSegment = async (text: string, duration: number) => {
-    if (!conversationId || !text.trim()) return;
-    
-    try {
-      const response = await fetch("/api/conversations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          conversationId,
-          segment: {
-            text,
-            timestamp: new Date().toISOString(),
-            duration
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save segment");
-      }
-    } catch (error) {
-      console.error("Error saving segment:", error);
-      setError("Failed to save transcript segment");
-    }
+    await sendAudioToAPI(audioBlob);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
-      setTranscript([]);
+      setTranscript("");
       setAnalysis(null);
       setError(null);
     }
   };
 
-  const handleFileUpload = async (file: File) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    setError(null);
+  const handleFileUpload = async () => {
+    if (!file) return;
 
     const formData = new FormData();
-    formData.append('audio', file);
-    formData.append('speakerId', currentSpeaker);
+    formData.append("file", file);
 
     try {
-      const xhr = new XMLHttpRequest();
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = (event.loaded / event.total) * 100;
-          setUploadProgress(progress);
-        }
-      };
+      setError(null);
+      const response = await fetch("/api/transcript", {
+        method: "POST",
+        body: formData,
+      });
 
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const data = JSON.parse(xhr.responseText);
-          if (data.text) {
-            setTranscript(data.transcript.map((segment: any) => ({
-              text: segment.text,
-              speakerId: segment.speakerId,
-              timestamp: segment.timestamp
-            })));
-          }
-        } else {
-          setError('Failed to upload file');
-        }
-        setIsUploading(false);
-      };
+      if (!response.ok) {
+        throw new Error("Failed to transcribe file");
+      }
 
-      xhr.onerror = () => {
-        setError('Failed to upload file');
-        setIsUploading(false);
-      };
-
-      xhr.open('POST', '/api/transcript');
-      xhr.send(formData);
+      const data = await response.json();
+      setTranscript(data.transcript);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to upload file');
-      setIsUploading(false);
+      setError("Error transcribing file. Please try again.");
+      console.error("Error:", error);
     }
   };
 
@@ -345,7 +164,7 @@ export default function TranscriptPage() {
 
       const data = await response.json();
       setConversationId(data.id);
-      setTranscript([]);
+      setTranscript("");
       setAnalysis(null);
       setError(null);
     } catch (error) {
@@ -377,11 +196,7 @@ export default function TranscriptPage() {
             try {
               const data = JSON.parse(xhr.responseText);
               if (data.text) {
-                setTranscript(data.transcript.map((segment: any) => ({
-                  text: segment.text,
-                  speakerId: segment.speakerId,
-                  timestamp: segment.timestamp
-                })));
+                setTranscript(data.text);
                 resolve(data);
               } else {
                 reject(new Error('No transcription text received'));
@@ -408,17 +223,32 @@ export default function TranscriptPage() {
   };
 
   const clearTranscript = () => {
-    setTranscript([]);
+    setTranscript('');
     setUploadSuccess(false);
   };
 
-  const handleLiveTranscription = (data: { text: string; speakerId?: string }) => {
-    const newSegment: TranscriptSegment = {
-      text: data.text,
-      speakerId: data.speakerId || currentSpeaker,
-      timestamp: new Date().toISOString()
-    };
-    setTranscript(prev => [...prev, newSegment]);
+  const saveSegment = async (text: string) => {
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversationId,
+          segment: {
+            text,
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save segment");
+      }
+    } catch (error) {
+      console.error("Error saving segment:", error);
+    }
   };
 
   return (
@@ -457,168 +287,67 @@ export default function TranscriptPage() {
             {isSaving ? "Creating..." : "New Conversation"}
           </button>
         </div>
-        
-        {/* Timer Display */}
-        {isRecording && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Recording Duration: {recordingDuration}s</span>
-              <span className="text-sm font-medium">Time Left: {timeLeft}s</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000" 
-                style={{ width: `${(timeLeft / 30) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-        
-        {/* Speech Recognition Error */}
         {speechError && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            {speechError}
+          <div className="text-red-500 mb-4">
+            Speech recognition error: {speechError}
           </div>
         )}
-        
-        {/* Live Transcript Display */}
-        <div className="mt-4 p-4 bg-gray-50 rounded-md">
-          <h3 className="text-lg font-medium mb-2">Live Transcript</h3>
-          <p className="whitespace-pre-wrap min-h-[100px]">
-            {transcript.map((segment, index) => (
-              <div
-                key={index}
-                className={`mb-2 p-2 rounded ${
-                  segment.speakerId === 'speaker1' ? 'bg-blue-100' : 'bg-green-100'
-                }`}
-              >
-                <span className="font-bold">
-                  {segment.speakerId === 'speaker1' ? 'Speaker 1' : 'Speaker 2'}:
-                </span>{' '}
-                {segment.text}
-              </div>
-            ))}
-          </p>
+        <div className="bg-gray-50 p-4 rounded-md min-h-[100px]">
+          <p className="whitespace-pre-wrap">{liveTranscript || "No live transcription yet..."}</p>
         </div>
       </div>
 
       {/* File Upload Section */}
       <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Upload Audio File</h2>
-        <div className="flex items-center gap-4">
+        <h2 className="text-xl font-semibold mb-4">Upload Transcript File</h2>
+        <div className="flex gap-4 mb-4">
           <input
             type="file"
-            accept="audio/*"
+            accept=".txt,.doc,.docx,.pdf"
             onChange={handleFileChange}
-            className="hidden"
-            ref={fileInputRef}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            onClick={handleFileUpload}
+            disabled={!file}
+            className="px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50"
           >
-            <Upload className="h-5 w-5" />
-            Choose File
+            Upload
           </button>
-          {file && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{file.name}</span>
-              <button
-                onClick={() => handleFileUpload(file)}
-                disabled={isUploading}
-                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
-              >
-                {isUploading ? "Uploading..." : "Upload"}
-              </button>
-              <button
-                onClick={() => setFile(null)}
-                className="p-1 text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
         </div>
-        
-        {/* Upload Progress */}
-        {isUploading && (
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">{uploadProgress}% uploaded</p>
-          </div>
-        )}
-        
-        {/* Upload Error */}
-        {uploadError && (
-          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            {uploadError}
-          </div>
-        )}
-        
-        {/* Upload Success */}
-        {uploadSuccess && (
-          <div className="mt-4 p-3 bg-green-100 text-green-700 rounded-md flex items-center">
-            <Check className="h-5 w-5 mr-2" />
-            File uploaded successfully!
-          </div>
-        )}
       </div>
 
       {/* Transcript Display */}
-      {transcript.length > 0 && !isRecording && (
+      {transcript && (
         <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Transcript</h2>
-          <div className="p-4 bg-gray-50 rounded-md">
-            {transcript.map((segment, index) => (
-              <div
-                key={index}
-                className={`mb-2 p-2 rounded ${
-                  segment.speakerId === 'speaker1' ? 'bg-blue-100' : 'bg-green-100'
-                }`}
-              >
-                <span className="font-bold">
-                  {segment.speakerId === 'speaker1' ? 'Speaker 1' : 'Speaker 2'}:
-                </span>{' '}
-                {segment.text}
-              </div>
-            ))}
-            <p className="text-sm text-gray-500 mt-2">
-              Duration: {segments[segments.length - 1]?.duration || 0} seconds
-            </p>
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="whitespace-pre-wrap">{transcript}</p>
           </div>
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50"
-            >
-              {isAnalyzing ? "Analyzing..." : "Analyze"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Analysis Results */}
-      {analysis && (
-        <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
-          <div className="p-4 bg-gray-50 rounded-md">
-            <p className="whitespace-pre-wrap">{analysis}</p>
-          </div>
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="mt-4 px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50"
+          >
+            {isAnalyzing ? "Analyzing..." : "Analyze Transcript"}
+          </button>
         </div>
       )}
 
       {/* Error Display */}
       {error && (
         <div className="mb-8 p-4 bg-red-100 text-red-700 rounded-md">
-          <p>{error}</p>
+          {error}
+        </div>
+      )}
+
+      {/* Analysis Results */}
+      {analysis && (
+        <div className="p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Analysis</h2>
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="whitespace-pre-wrap">{analysis.analysis}</p>
+          </div>
         </div>
       )}
     </div>

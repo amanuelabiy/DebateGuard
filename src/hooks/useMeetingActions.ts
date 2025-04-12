@@ -8,12 +8,12 @@ const useMeetingActions = () => {
   const createInstantMeeting = async () => {
     try {
       // Get Stream token
-      const tokenResponse = await fetch('/api/stream');
+      const tokenResponse = await fetch("/api/stream");
       if (!tokenResponse.ok) {
-        throw new Error('Failed to get Stream token');
+        throw new Error("Failed to get Stream token");
       }
       const { token, apiKey, userId } = await tokenResponse.json();
-      
+
       // Initialize Stream client with token
       const client = StreamChat.getInstance(apiKey);
       await client.connectUser(
@@ -22,7 +22,7 @@ const useMeetingActions = () => {
         },
         token
       );
-      
+
       const id = crypto.randomUUID();
       router.push(`/meeting/${id}`);
       toast.success("Meeting Created");
@@ -39,4 +39,4 @@ const useMeetingActions = () => {
   return { createInstantMeeting, joinMeeting };
 };
 
-export default useMeetingActions; 
+export default useMeetingActions;

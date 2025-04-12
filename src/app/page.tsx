@@ -1,15 +1,5 @@
-import { SignOutButton } from "@clerk/nextjs";
+import AnimatedPage from "@/components/AnimatedPage";
 
 export default function Home() {
-
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<"join" | "start">("join");
-
-
-  return (
-    <div>
-      <SignOutButton />
-    </div>
-  );
-
+  return <AnimatedPage />;
 }

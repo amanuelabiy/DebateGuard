@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "DebateGuard",
-  description: "AI-powered debate analysis platform",
+  description: "Analyze debates for logical fallacies",
 };
 
 export default function RootLayout({
@@ -20,11 +20,13 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark">
+
         <body className={`${inter.className} bg-[#0D1117] text-[#E5E7EB]`}>
           <StreamClientProvider>
             {children}
             <Toaster />
           </StreamClientProvider>
+
         </body>
       </html>
     </ClerkProvider>

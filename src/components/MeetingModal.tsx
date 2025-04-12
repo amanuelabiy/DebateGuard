@@ -54,6 +54,7 @@ function MeetingModal({
               Cancel
             </Button>
             <Button
+              className="bg-[#2563EB] hover:cursor-pointer hover:bg-[#2563EB]/80"
               onClick={handleStart}
               disabled={isJoinMeeting && !meetingUrl.trim()}
             >

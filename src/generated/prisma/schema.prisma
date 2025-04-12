@@ -22,3 +22,14 @@ model User {
   email String  @unique
   name  String?
 }
+
+model DebateSession {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  transcript   String
+  analysis     String
+  participants Json?
+  metadata     Json?
+  status       String   @default("completed")
+}

@@ -18,6 +18,11 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  * 
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
+/**
+ * Model DebateSession
+ * 
+ */
+export type DebateSession = $Result.DefaultSelection<Prisma.$DebateSessionPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -153,6 +158,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.debateSession`: Exposes CRUD operations for the **DebateSession** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DebateSessions
+    * const debateSessions = await prisma.debateSession.findMany()
+    * ```
+    */
+  get debateSession(): Prisma.DebateSessionDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -593,7 +608,8 @@ export namespace Prisma {
 
 
   export const ModelName: {
-    User: 'User'
+    User: 'User',
+    DebateSession: 'DebateSession'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -612,7 +628,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user"
+      modelProps: "user" | "debateSession"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -687,6 +703,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      DebateSession: {
+        payload: Prisma.$DebateSessionPayload<ExtArgs>
+        fields: Prisma.DebateSessionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DebateSessionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DebateSessionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>
+          }
+          findFirst: {
+            args: Prisma.DebateSessionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DebateSessionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>
+          }
+          findMany: {
+            args: Prisma.DebateSessionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>[]
+          }
+          create: {
+            args: Prisma.DebateSessionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>
+          }
+          createMany: {
+            args: Prisma.DebateSessionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DebateSessionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>[]
+          }
+          delete: {
+            args: Prisma.DebateSessionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>
+          }
+          update: {
+            args: Prisma.DebateSessionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>
+          }
+          deleteMany: {
+            args: Prisma.DebateSessionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DebateSessionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DebateSessionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>[]
+          }
+          upsert: {
+            args: Prisma.DebateSessionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DebateSessionPayload>
+          }
+          aggregate: {
+            args: Prisma.DebateSessionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDebateSession>
+          }
+          groupBy: {
+            args: Prisma.DebateSessionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DebateSessionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DebateSessionCountArgs<ExtArgs>
+            result: $Utils.Optional<DebateSessionCountAggregateOutputType> | number
           }
         }
       }
@@ -775,6 +865,7 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     user?: UserOmit
+    debateSession?: DebateSessionOmit
   }
 
   /* Types for Logging */
@@ -1873,6 +1964,1032 @@ export namespace Prisma {
 
 
   /**
+   * Model DebateSession
+   */
+
+  export type AggregateDebateSession = {
+    _count: DebateSessionCountAggregateOutputType | null
+    _min: DebateSessionMinAggregateOutputType | null
+    _max: DebateSessionMaxAggregateOutputType | null
+  }
+
+  export type DebateSessionMinAggregateOutputType = {
+    id: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    transcript: string | null
+    analysis: string | null
+    status: string | null
+  }
+
+  export type DebateSessionMaxAggregateOutputType = {
+    id: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    transcript: string | null
+    analysis: string | null
+    status: string | null
+  }
+
+  export type DebateSessionCountAggregateOutputType = {
+    id: number
+    createdAt: number
+    updatedAt: number
+    transcript: number
+    analysis: number
+    participants: number
+    metadata: number
+    status: number
+    _all: number
+  }
+
+
+  export type DebateSessionMinAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    transcript?: true
+    analysis?: true
+    status?: true
+  }
+
+  export type DebateSessionMaxAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    transcript?: true
+    analysis?: true
+    status?: true
+  }
+
+  export type DebateSessionCountAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    transcript?: true
+    analysis?: true
+    participants?: true
+    metadata?: true
+    status?: true
+    _all?: true
+  }
+
+  export type DebateSessionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DebateSession to aggregate.
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DebateSessions to fetch.
+     */
+    orderBy?: DebateSessionOrderByWithRelationInput | DebateSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DebateSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DebateSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DebateSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DebateSessions
+    **/
+    _count?: true | DebateSessionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DebateSessionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DebateSessionMaxAggregateInputType
+  }
+
+  export type GetDebateSessionAggregateType<T extends DebateSessionAggregateArgs> = {
+        [P in keyof T & keyof AggregateDebateSession]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDebateSession[P]>
+      : GetScalarType<T[P], AggregateDebateSession[P]>
+  }
+
+
+
+
+  export type DebateSessionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DebateSessionWhereInput
+    orderBy?: DebateSessionOrderByWithAggregationInput | DebateSessionOrderByWithAggregationInput[]
+    by: DebateSessionScalarFieldEnum[] | DebateSessionScalarFieldEnum
+    having?: DebateSessionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DebateSessionCountAggregateInputType | true
+    _min?: DebateSessionMinAggregateInputType
+    _max?: DebateSessionMaxAggregateInputType
+  }
+
+  export type DebateSessionGroupByOutputType = {
+    id: string
+    createdAt: Date
+    updatedAt: Date
+    transcript: string
+    analysis: string
+    participants: JsonValue | null
+    metadata: JsonValue | null
+    status: string
+    _count: DebateSessionCountAggregateOutputType | null
+    _min: DebateSessionMinAggregateOutputType | null
+    _max: DebateSessionMaxAggregateOutputType | null
+  }
+
+  type GetDebateSessionGroupByPayload<T extends DebateSessionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DebateSessionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DebateSessionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DebateSessionGroupByOutputType[P]>
+            : GetScalarType<T[P], DebateSessionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DebateSessionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    transcript?: boolean
+    analysis?: boolean
+    participants?: boolean
+    metadata?: boolean
+    status?: boolean
+  }, ExtArgs["result"]["debateSession"]>
+
+  export type DebateSessionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    transcript?: boolean
+    analysis?: boolean
+    participants?: boolean
+    metadata?: boolean
+    status?: boolean
+  }, ExtArgs["result"]["debateSession"]>
+
+  export type DebateSessionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    transcript?: boolean
+    analysis?: boolean
+    participants?: boolean
+    metadata?: boolean
+    status?: boolean
+  }, ExtArgs["result"]["debateSession"]>
+
+  export type DebateSessionSelectScalar = {
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    transcript?: boolean
+    analysis?: boolean
+    participants?: boolean
+    metadata?: boolean
+    status?: boolean
+  }
+
+  export type DebateSessionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "transcript" | "analysis" | "participants" | "metadata" | "status", ExtArgs["result"]["debateSession"]>
+
+  export type $DebateSessionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DebateSession"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      createdAt: Date
+      updatedAt: Date
+      transcript: string
+      analysis: string
+      participants: Prisma.JsonValue | null
+      metadata: Prisma.JsonValue | null
+      status: string
+    }, ExtArgs["result"]["debateSession"]>
+    composites: {}
+  }
+
+  type DebateSessionGetPayload<S extends boolean | null | undefined | DebateSessionDefaultArgs> = $Result.GetResult<Prisma.$DebateSessionPayload, S>
+
+  type DebateSessionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DebateSessionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DebateSessionCountAggregateInputType | true
+    }
+
+  export interface DebateSessionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DebateSession'], meta: { name: 'DebateSession' } }
+    /**
+     * Find zero or one DebateSession that matches the filter.
+     * @param {DebateSessionFindUniqueArgs} args - Arguments to find a DebateSession
+     * @example
+     * // Get one DebateSession
+     * const debateSession = await prisma.debateSession.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DebateSessionFindUniqueArgs>(args: SelectSubset<T, DebateSessionFindUniqueArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DebateSession that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DebateSessionFindUniqueOrThrowArgs} args - Arguments to find a DebateSession
+     * @example
+     * // Get one DebateSession
+     * const debateSession = await prisma.debateSession.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DebateSessionFindUniqueOrThrowArgs>(args: SelectSubset<T, DebateSessionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DebateSession that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionFindFirstArgs} args - Arguments to find a DebateSession
+     * @example
+     * // Get one DebateSession
+     * const debateSession = await prisma.debateSession.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DebateSessionFindFirstArgs>(args?: SelectSubset<T, DebateSessionFindFirstArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DebateSession that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionFindFirstOrThrowArgs} args - Arguments to find a DebateSession
+     * @example
+     * // Get one DebateSession
+     * const debateSession = await prisma.debateSession.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DebateSessionFindFirstOrThrowArgs>(args?: SelectSubset<T, DebateSessionFindFirstOrThrowArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DebateSessions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DebateSessions
+     * const debateSessions = await prisma.debateSession.findMany()
+     * 
+     * // Get first 10 DebateSessions
+     * const debateSessions = await prisma.debateSession.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const debateSessionWithIdOnly = await prisma.debateSession.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DebateSessionFindManyArgs>(args?: SelectSubset<T, DebateSessionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DebateSession.
+     * @param {DebateSessionCreateArgs} args - Arguments to create a DebateSession.
+     * @example
+     * // Create one DebateSession
+     * const DebateSession = await prisma.debateSession.create({
+     *   data: {
+     *     // ... data to create a DebateSession
+     *   }
+     * })
+     * 
+     */
+    create<T extends DebateSessionCreateArgs>(args: SelectSubset<T, DebateSessionCreateArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DebateSessions.
+     * @param {DebateSessionCreateManyArgs} args - Arguments to create many DebateSessions.
+     * @example
+     * // Create many DebateSessions
+     * const debateSession = await prisma.debateSession.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DebateSessionCreateManyArgs>(args?: SelectSubset<T, DebateSessionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DebateSessions and returns the data saved in the database.
+     * @param {DebateSessionCreateManyAndReturnArgs} args - Arguments to create many DebateSessions.
+     * @example
+     * // Create many DebateSessions
+     * const debateSession = await prisma.debateSession.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DebateSessions and only return the `id`
+     * const debateSessionWithIdOnly = await prisma.debateSession.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DebateSessionCreateManyAndReturnArgs>(args?: SelectSubset<T, DebateSessionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DebateSession.
+     * @param {DebateSessionDeleteArgs} args - Arguments to delete one DebateSession.
+     * @example
+     * // Delete one DebateSession
+     * const DebateSession = await prisma.debateSession.delete({
+     *   where: {
+     *     // ... filter to delete one DebateSession
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DebateSessionDeleteArgs>(args: SelectSubset<T, DebateSessionDeleteArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DebateSession.
+     * @param {DebateSessionUpdateArgs} args - Arguments to update one DebateSession.
+     * @example
+     * // Update one DebateSession
+     * const debateSession = await prisma.debateSession.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DebateSessionUpdateArgs>(args: SelectSubset<T, DebateSessionUpdateArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DebateSessions.
+     * @param {DebateSessionDeleteManyArgs} args - Arguments to filter DebateSessions to delete.
+     * @example
+     * // Delete a few DebateSessions
+     * const { count } = await prisma.debateSession.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DebateSessionDeleteManyArgs>(args?: SelectSubset<T, DebateSessionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DebateSessions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DebateSessions
+     * const debateSession = await prisma.debateSession.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DebateSessionUpdateManyArgs>(args: SelectSubset<T, DebateSessionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DebateSessions and returns the data updated in the database.
+     * @param {DebateSessionUpdateManyAndReturnArgs} args - Arguments to update many DebateSessions.
+     * @example
+     * // Update many DebateSessions
+     * const debateSession = await prisma.debateSession.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DebateSessions and only return the `id`
+     * const debateSessionWithIdOnly = await prisma.debateSession.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DebateSessionUpdateManyAndReturnArgs>(args: SelectSubset<T, DebateSessionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DebateSession.
+     * @param {DebateSessionUpsertArgs} args - Arguments to update or create a DebateSession.
+     * @example
+     * // Update or create a DebateSession
+     * const debateSession = await prisma.debateSession.upsert({
+     *   create: {
+     *     // ... data to create a DebateSession
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DebateSession we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DebateSessionUpsertArgs>(args: SelectSubset<T, DebateSessionUpsertArgs<ExtArgs>>): Prisma__DebateSessionClient<$Result.GetResult<Prisma.$DebateSessionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DebateSessions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionCountArgs} args - Arguments to filter DebateSessions to count.
+     * @example
+     * // Count the number of DebateSessions
+     * const count = await prisma.debateSession.count({
+     *   where: {
+     *     // ... the filter for the DebateSessions we want to count
+     *   }
+     * })
+    **/
+    count<T extends DebateSessionCountArgs>(
+      args?: Subset<T, DebateSessionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DebateSessionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DebateSession.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DebateSessionAggregateArgs>(args: Subset<T, DebateSessionAggregateArgs>): Prisma.PrismaPromise<GetDebateSessionAggregateType<T>>
+
+    /**
+     * Group by DebateSession.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DebateSessionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DebateSessionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DebateSessionGroupByArgs['orderBy'] }
+        : { orderBy?: DebateSessionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DebateSessionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDebateSessionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DebateSession model
+   */
+  readonly fields: DebateSessionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DebateSession.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DebateSessionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DebateSession model
+   */
+  interface DebateSessionFieldRefs {
+    readonly id: FieldRef<"DebateSession", 'String'>
+    readonly createdAt: FieldRef<"DebateSession", 'DateTime'>
+    readonly updatedAt: FieldRef<"DebateSession", 'DateTime'>
+    readonly transcript: FieldRef<"DebateSession", 'String'>
+    readonly analysis: FieldRef<"DebateSession", 'String'>
+    readonly participants: FieldRef<"DebateSession", 'Json'>
+    readonly metadata: FieldRef<"DebateSession", 'Json'>
+    readonly status: FieldRef<"DebateSession", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DebateSession findUnique
+   */
+  export type DebateSessionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * Filter, which DebateSession to fetch.
+     */
+    where: DebateSessionWhereUniqueInput
+  }
+
+  /**
+   * DebateSession findUniqueOrThrow
+   */
+  export type DebateSessionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * Filter, which DebateSession to fetch.
+     */
+    where: DebateSessionWhereUniqueInput
+  }
+
+  /**
+   * DebateSession findFirst
+   */
+  export type DebateSessionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * Filter, which DebateSession to fetch.
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DebateSessions to fetch.
+     */
+    orderBy?: DebateSessionOrderByWithRelationInput | DebateSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DebateSessions.
+     */
+    cursor?: DebateSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DebateSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DebateSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DebateSessions.
+     */
+    distinct?: DebateSessionScalarFieldEnum | DebateSessionScalarFieldEnum[]
+  }
+
+  /**
+   * DebateSession findFirstOrThrow
+   */
+  export type DebateSessionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * Filter, which DebateSession to fetch.
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DebateSessions to fetch.
+     */
+    orderBy?: DebateSessionOrderByWithRelationInput | DebateSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DebateSessions.
+     */
+    cursor?: DebateSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DebateSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DebateSessions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DebateSessions.
+     */
+    distinct?: DebateSessionScalarFieldEnum | DebateSessionScalarFieldEnum[]
+  }
+
+  /**
+   * DebateSession findMany
+   */
+  export type DebateSessionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * Filter, which DebateSessions to fetch.
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DebateSessions to fetch.
+     */
+    orderBy?: DebateSessionOrderByWithRelationInput | DebateSessionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DebateSessions.
+     */
+    cursor?: DebateSessionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DebateSessions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DebateSessions.
+     */
+    skip?: number
+    distinct?: DebateSessionScalarFieldEnum | DebateSessionScalarFieldEnum[]
+  }
+
+  /**
+   * DebateSession create
+   */
+  export type DebateSessionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * The data needed to create a DebateSession.
+     */
+    data: XOR<DebateSessionCreateInput, DebateSessionUncheckedCreateInput>
+  }
+
+  /**
+   * DebateSession createMany
+   */
+  export type DebateSessionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DebateSessions.
+     */
+    data: DebateSessionCreateManyInput | DebateSessionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DebateSession createManyAndReturn
+   */
+  export type DebateSessionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * The data used to create many DebateSessions.
+     */
+    data: DebateSessionCreateManyInput | DebateSessionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DebateSession update
+   */
+  export type DebateSessionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * The data needed to update a DebateSession.
+     */
+    data: XOR<DebateSessionUpdateInput, DebateSessionUncheckedUpdateInput>
+    /**
+     * Choose, which DebateSession to update.
+     */
+    where: DebateSessionWhereUniqueInput
+  }
+
+  /**
+   * DebateSession updateMany
+   */
+  export type DebateSessionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DebateSessions.
+     */
+    data: XOR<DebateSessionUpdateManyMutationInput, DebateSessionUncheckedUpdateManyInput>
+    /**
+     * Filter which DebateSessions to update
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * Limit how many DebateSessions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DebateSession updateManyAndReturn
+   */
+  export type DebateSessionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * The data used to update DebateSessions.
+     */
+    data: XOR<DebateSessionUpdateManyMutationInput, DebateSessionUncheckedUpdateManyInput>
+    /**
+     * Filter which DebateSessions to update
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * Limit how many DebateSessions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DebateSession upsert
+   */
+  export type DebateSessionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * The filter to search for the DebateSession to update in case it exists.
+     */
+    where: DebateSessionWhereUniqueInput
+    /**
+     * In case the DebateSession found by the `where` argument doesn't exist, create a new DebateSession with this data.
+     */
+    create: XOR<DebateSessionCreateInput, DebateSessionUncheckedCreateInput>
+    /**
+     * In case the DebateSession was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DebateSessionUpdateInput, DebateSessionUncheckedUpdateInput>
+  }
+
+  /**
+   * DebateSession delete
+   */
+  export type DebateSessionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+    /**
+     * Filter which DebateSession to delete.
+     */
+    where: DebateSessionWhereUniqueInput
+  }
+
+  /**
+   * DebateSession deleteMany
+   */
+  export type DebateSessionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DebateSessions to delete
+     */
+    where?: DebateSessionWhereInput
+    /**
+     * Limit how many DebateSessions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DebateSession without action
+   */
+  export type DebateSessionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DebateSession
+     */
+    select?: DebateSessionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DebateSession
+     */
+    omit?: DebateSessionOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -1895,12 +3012,34 @@ export namespace Prisma {
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+  export const DebateSessionScalarFieldEnum: {
+    id: 'id',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    transcript: 'transcript',
+    analysis: 'analysis',
+    participants: 'participants',
+    metadata: 'metadata',
+    status: 'status'
+  };
+
+  export type DebateSessionScalarFieldEnum = (typeof DebateSessionScalarFieldEnum)[keyof typeof DebateSessionScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
   };
 
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
   export const QueryMode: {
@@ -1917,6 +3056,15 @@ export namespace Prisma {
   };
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   /**
@@ -1949,6 +3097,34 @@ export namespace Prisma {
    * Reference to a field of type 'String[]'
    */
   export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'DateTime'
+   */
+  export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+  /**
+   * Reference to a field of type 'DateTime[]'
+   */
+  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -2013,6 +3189,73 @@ export namespace Prisma {
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
   }
 
+  export type DebateSessionWhereInput = {
+    AND?: DebateSessionWhereInput | DebateSessionWhereInput[]
+    OR?: DebateSessionWhereInput[]
+    NOT?: DebateSessionWhereInput | DebateSessionWhereInput[]
+    id?: StringFilter<"DebateSession"> | string
+    createdAt?: DateTimeFilter<"DebateSession"> | Date | string
+    updatedAt?: DateTimeFilter<"DebateSession"> | Date | string
+    transcript?: StringFilter<"DebateSession"> | string
+    analysis?: StringFilter<"DebateSession"> | string
+    participants?: JsonNullableFilter<"DebateSession">
+    metadata?: JsonNullableFilter<"DebateSession">
+    status?: StringFilter<"DebateSession"> | string
+  }
+
+  export type DebateSessionOrderByWithRelationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    transcript?: SortOrder
+    analysis?: SortOrder
+    participants?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
+    status?: SortOrder
+  }
+
+  export type DebateSessionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: DebateSessionWhereInput | DebateSessionWhereInput[]
+    OR?: DebateSessionWhereInput[]
+    NOT?: DebateSessionWhereInput | DebateSessionWhereInput[]
+    createdAt?: DateTimeFilter<"DebateSession"> | Date | string
+    updatedAt?: DateTimeFilter<"DebateSession"> | Date | string
+    transcript?: StringFilter<"DebateSession"> | string
+    analysis?: StringFilter<"DebateSession"> | string
+    participants?: JsonNullableFilter<"DebateSession">
+    metadata?: JsonNullableFilter<"DebateSession">
+    status?: StringFilter<"DebateSession"> | string
+  }, "id">
+
+  export type DebateSessionOrderByWithAggregationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    transcript?: SortOrder
+    analysis?: SortOrder
+    participants?: SortOrderInput | SortOrder
+    metadata?: SortOrderInput | SortOrder
+    status?: SortOrder
+    _count?: DebateSessionCountOrderByAggregateInput
+    _max?: DebateSessionMaxOrderByAggregateInput
+    _min?: DebateSessionMinOrderByAggregateInput
+  }
+
+  export type DebateSessionScalarWhereWithAggregatesInput = {
+    AND?: DebateSessionScalarWhereWithAggregatesInput | DebateSessionScalarWhereWithAggregatesInput[]
+    OR?: DebateSessionScalarWhereWithAggregatesInput[]
+    NOT?: DebateSessionScalarWhereWithAggregatesInput | DebateSessionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DebateSession"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"DebateSession"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"DebateSession"> | Date | string
+    transcript?: StringWithAggregatesFilter<"DebateSession"> | string
+    analysis?: StringWithAggregatesFilter<"DebateSession"> | string
+    participants?: JsonNullableWithAggregatesFilter<"DebateSession">
+    metadata?: JsonNullableWithAggregatesFilter<"DebateSession">
+    status?: StringWithAggregatesFilter<"DebateSession"> | string
+  }
+
   export type UserCreateInput = {
     email: string
     name?: string | null
@@ -2050,6 +3293,83 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     email?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type DebateSessionCreateInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transcript: string
+    analysis: string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: string
+  }
+
+  export type DebateSessionUncheckedCreateInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transcript: string
+    analysis: string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: string
+  }
+
+  export type DebateSessionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transcript?: StringFieldUpdateOperationsInput | string
+    analysis?: StringFieldUpdateOperationsInput | string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type DebateSessionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transcript?: StringFieldUpdateOperationsInput | string
+    analysis?: StringFieldUpdateOperationsInput | string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type DebateSessionCreateManyInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transcript: string
+    analysis: string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: string
+  }
+
+  export type DebateSessionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transcript?: StringFieldUpdateOperationsInput | string
+    analysis?: StringFieldUpdateOperationsInput | string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type DebateSessionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transcript?: StringFieldUpdateOperationsInput | string
+    analysis?: StringFieldUpdateOperationsInput | string
+    participants?: NullableJsonNullValueInput | InputJsonValue
+    metadata?: NullableJsonNullValueInput | InputJsonValue
+    status?: StringFieldUpdateOperationsInput | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -2176,6 +3496,109 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type DebateSessionCountOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    transcript?: SortOrder
+    analysis?: SortOrder
+    participants?: SortOrder
+    metadata?: SortOrder
+    status?: SortOrder
+  }
+
+  export type DebateSessionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    transcript?: SortOrder
+    analysis?: SortOrder
+    status?: SortOrder
+  }
+
+  export type DebateSessionMinOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    transcript?: SortOrder
+    analysis?: SortOrder
+    status?: SortOrder
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
@@ -2190,6 +3613,10 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -2301,6 +3728,54 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
 

@@ -11,7 +11,7 @@ import useGetCallById from "@/hooks/useGetCallById";
 
 export default function MeetingsPage() {
   const { id } = useParams();
-  const { isLoaded } = useUser();
+  const { user, isLoaded } = useUser();
   const { call, isCallLoading } = useGetCallById(id as string);
 
   const [isSetupComplete, setIsSetupComplete] = useState(false);

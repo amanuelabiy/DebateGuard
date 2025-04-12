@@ -123,9 +123,52 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name'
 };
 
+exports.Prisma.ConversationScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SegmentScalarFieldEnum = {
+  id: 'id',
+  text: 'text',
+  timestamp: 'timestamp',
+  conversationId: 'conversationId'
+};
+
+exports.Prisma.DebateSessionScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  status: 'status',
+  participants: 'participants',
+  metadata: 'metadata'
+};
+
+exports.Prisma.TranscriptScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  content: 'content',
+  debateSessionId: 'debateSessionId'
+};
+
+exports.Prisma.AnalysisScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  content: 'content',
+  debateSessionId: 'debateSessionId'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.QueryMode = {
@@ -138,9 +181,20 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  Conversation: 'Conversation',
+  Segment: 'Segment',
+  DebateSession: 'DebateSession',
+  Transcript: 'Transcript',
+  Analysis: 'Analysis'
 };
 
 /**

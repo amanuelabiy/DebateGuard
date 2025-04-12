@@ -6,9 +6,16 @@ import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { Mic, Square, Upload, Video, X, Check, AlertCircle } from 'lucide-react';
 import { AnalysisResult } from '@/types';
 
+interface TranscriptSegment {
+  text: string;
+  speakerId?: string;
+  timestamp: string;
+}
+
 export default function TranscriptPage() {
+  const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
+  const [currentSpeaker, setCurrentSpeaker] = useState<string>('speaker1');
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -21,10 +28,13 @@ export default function TranscriptPage() {
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [segments, setSegments] = useState<{ text: string; timestamp: Date }[]>([]);
+  const [segments, setSegments] = useState<{ text: string; timestamp: Date; duration: number }[]>([]);
   const [timeLeft, setTimeLeft] = useState(30);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recordingStartTimeRef = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   
   // Use the speech recognition hook
   const {
@@ -35,19 +45,13 @@ export default function TranscriptPage() {
     resetTranscript: resetLiveTranscript,
     error: speechError
   } = useSpeechRecognition({
-    onResult: (text) => {
-      // You can add additional processing here if needed
-      console.log('Live transcription update:', text);
-      
-      // Update transcript with new text
-      if (text && text.trim()) {
-        setTranscript(prev => {
-          // Only append if it's new content
-          if (prev && !prev.endsWith(text)) {
-            return prev + "\n" + text;
-          }
-          return text;
-        });
+    onResult: (result) => {
+      if (result) {
+        setTranscript(prev => [...prev, {
+          text: result,
+          speakerId: currentSpeaker,
+          timestamp: new Date().toISOString()
+        }]);
       }
     },
     onError: (error) => {
@@ -66,6 +70,9 @@ export default function TranscriptPage() {
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
       }
     };
   }, [isListening, stopListening]);
@@ -105,61 +112,74 @@ export default function TranscriptPage() {
   // Update transcript when live transcription changes
   useEffect(() => {
     if (liveTranscript) {
-      setTranscript(prev => {
-        // Only append if it's new content
-        if (prev && !prev.endsWith(liveTranscript)) {
-          return prev + "\n" + liveTranscript;
-        }
-        return liveTranscript;
-      });
+      const newSegment: TranscriptSegment = {
+        text: liveTranscript,
+        speakerId: currentSpeaker,
+        timestamp: new Date().toISOString()
+      };
+      setTranscript(prev => [...prev, newSegment]);
     }
-  }, [liveTranscript]);
+  }, [liveTranscript, currentSpeaker]);
+
+  const toggleSpeaker = () => {
+    setCurrentSpeaker(prev => prev === 'speaker1' ? 'speaker2' : 'speaker1');
+  };
 
   const startRecording = async () => {
-    if (!audioRecorderRef.current) {
-      audioRecorderRef.current = new AudioRecorder();
-    }
-    
-    const success = await audioRecorderRef.current.startRecording();
-    if (success) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob);
+        formData.append('speakerId', currentSpeaker);
+
+        try {
+          const response = await fetch('/api/transcript', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to transcribe audio');
+          }
+
+          const data = await response.json();
+          setTranscript(prev => [...prev, {
+            text: data.text,
+            speakerId: data.speakerId || currentSpeaker,
+            timestamp: new Date().toISOString()
+          }]);
+        } catch (error) {
+          setError(error instanceof Error ? error.message : 'Failed to transcribe audio');
+        }
+      };
+
+      mediaRecorder.start(1000);
       setIsRecording(true);
-      // Start speech recognition when recording starts
       startListening();
-      // Reset transcript
-      setTranscript("");
-      resetLiveTranscript();
-      setError(null);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to start recording');
     }
   };
 
-  const stopRecording = async () => {
-    if (!audioRecorderRef.current) return;
-    
-    // Stop speech recognition first
-    stopListening();
-    
-    const audioBlob = await audioRecorderRef.current.stopRecording();
-    setIsRecording(false);
-    
-    // Create a segment with the final transcript
-    if (transcript && transcript.trim()) {
-      const newSegment = {
-        text: transcript,
-        timestamp: new Date()
-      };
-      
-      setSegments(prev => [...prev, newSegment]);
-      
-      // Save the segment to the database
-      if (conversationId) {
-        saveSegment(transcript);
-      }
-      
-      // Analyze the transcript for fallacies
-      analyzeTranscript(transcript);
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
-    
-    await sendAudioToAPI(audioBlob);
+    setIsRecording(false);
+    stopListening();
   };
 
   const analyzeTranscript = async (text: string) => {
@@ -195,7 +215,7 @@ export default function TranscriptPage() {
   };
 
   // Save segments to the database
-  const saveSegment = async (text: string) => {
+  const saveSegment = async (text: string, duration: number) => {
     if (!conversationId || !text.trim()) return;
     
     try {
@@ -209,6 +229,7 @@ export default function TranscriptPage() {
           segment: {
             text,
             timestamp: new Date().toISOString(),
+            duration
           },
         }),
       });
@@ -225,34 +246,56 @@ export default function TranscriptPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
-      setTranscript("");
+      setTranscript([]);
       setAnalysis(null);
       setError(null);
     }
   };
 
-  const handleFileUpload = async () => {
-    if (!file) return;
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+    setError(null);
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('audio', file);
+    formData.append('speakerId', currentSpeaker);
 
     try {
-      setError(null);
-      const response = await fetch("/api/transcript", {
-        method: "POST",
-        body: formData,
-      });
+      const xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100;
+          setUploadProgress(progress);
+        }
+      };
 
-      if (!response.ok) {
-        throw new Error("Failed to transcribe file");
-      }
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          if (data.text) {
+            setTranscript(data.transcript.map((segment: any) => ({
+              text: segment.text,
+              speakerId: segment.speakerId,
+              timestamp: segment.timestamp
+            })));
+          }
+        } else {
+          setError('Failed to upload file');
+        }
+        setIsUploading(false);
+      };
 
-      const data = await response.json();
-      setTranscript(data.transcript);
+      xhr.onerror = () => {
+        setError('Failed to upload file');
+        setIsUploading(false);
+      };
+
+      xhr.open('POST', '/api/transcript');
+      xhr.send(formData);
     } catch (error) {
-      setError("Error transcribing file. Please try again.");
-      console.error("Error:", error);
+      setError(error instanceof Error ? error.message : 'Failed to upload file');
+      setIsUploading(false);
     }
   };
 
@@ -302,7 +345,7 @@ export default function TranscriptPage() {
 
       const data = await response.json();
       setConversationId(data.id);
-      setTranscript("");
+      setTranscript([]);
       setAnalysis(null);
       setError(null);
     } catch (error) {
@@ -334,7 +377,11 @@ export default function TranscriptPage() {
             try {
               const data = JSON.parse(xhr.responseText);
               if (data.text) {
-                setTranscript(data.text);
+                setTranscript(data.transcript.map((segment: any) => ({
+                  text: segment.text,
+                  speakerId: segment.speakerId,
+                  timestamp: segment.timestamp
+                })));
                 resolve(data);
               } else {
                 reject(new Error('No transcription text received'));
@@ -361,8 +408,17 @@ export default function TranscriptPage() {
   };
 
   const clearTranscript = () => {
-    setTranscript('');
+    setTranscript([]);
     setUploadSuccess(false);
+  };
+
+  const handleLiveTranscription = (data: { text: string; speakerId?: string }) => {
+    const newSegment: TranscriptSegment = {
+      text: data.text,
+      speakerId: data.speakerId || currentSpeaker,
+      timestamp: new Date().toISOString()
+    };
+    setTranscript(prev => [...prev, newSegment]);
   };
 
   return (
@@ -404,14 +460,17 @@ export default function TranscriptPage() {
         
         {/* Timer Display */}
         {isRecording && (
-          <div className="mb-4 flex items-center">
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Recording Duration: {recordingDuration}s</span>
+              <span className="text-sm font-medium">Time Left: {timeLeft}s</span>
+            </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div 
                 className="bg-blue-600 h-2.5 rounded-full transition-all duration-1000" 
                 style={{ width: `${(timeLeft / 30) * 100}%` }}
               ></div>
             </div>
-            <span className="ml-2 text-sm font-medium">{timeLeft}s</span>
           </div>
         )}
         
@@ -427,7 +486,19 @@ export default function TranscriptPage() {
         <div className="mt-4 p-4 bg-gray-50 rounded-md">
           <h3 className="text-lg font-medium mb-2">Live Transcript</h3>
           <p className="whitespace-pre-wrap min-h-[100px]">
-            {transcript || (isRecording ? "Listening..." : "No transcript yet")}
+            {transcript.map((segment, index) => (
+              <div
+                key={index}
+                className={`mb-2 p-2 rounded ${
+                  segment.speakerId === 'speaker1' ? 'bg-blue-100' : 'bg-green-100'
+                }`}
+              >
+                <span className="font-bold">
+                  {segment.speakerId === 'speaker1' ? 'Speaker 1' : 'Speaker 2'}:
+                </span>{' '}
+                {segment.text}
+              </div>
+            ))}
           </p>
         </div>
       </div>
@@ -454,7 +525,7 @@ export default function TranscriptPage() {
             <div className="flex items-center gap-2">
               <span className="text-sm">{file.name}</span>
               <button
-                onClick={handleFileUpload}
+                onClick={() => handleFileUpload(file)}
                 disabled={isUploading}
                 className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
               >
@@ -501,11 +572,26 @@ export default function TranscriptPage() {
       </div>
 
       {/* Transcript Display */}
-      {transcript && !isRecording && (
+      {transcript.length > 0 && !isRecording && (
         <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Transcript</h2>
           <div className="p-4 bg-gray-50 rounded-md">
-            <p className="whitespace-pre-wrap">{transcript}</p>
+            {transcript.map((segment, index) => (
+              <div
+                key={index}
+                className={`mb-2 p-2 rounded ${
+                  segment.speakerId === 'speaker1' ? 'bg-blue-100' : 'bg-green-100'
+                }`}
+              >
+                <span className="font-bold">
+                  {segment.speakerId === 'speaker1' ? 'Speaker 1' : 'Speaker 2'}:
+                </span>{' '}
+                {segment.text}
+              </div>
+            ))}
+            <p className="text-sm text-gray-500 mt-2">
+              Duration: {segments[segments.length - 1]?.duration || 0} seconds
+            </p>
           </div>
           <div className="mt-4 flex justify-end">
             <button

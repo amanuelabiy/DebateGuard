@@ -208,11 +208,12 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgresql://DebateGuardDB_owner:npg_5usygYKf8AWS@ep-ancient-haze-a4a2vr5e-pooler.us-east-1.aws.neon.tech/DebateGuardDB?sslmode=require"
+        "value": null
       }
     }
   },

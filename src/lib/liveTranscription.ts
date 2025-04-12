@@ -3,7 +3,7 @@ export class LiveTranscription {
   private mediaRecorder: MediaRecorder | null = null;
   private transcriptionCallback: ((text: string) => void) | null = null;
   private isProcessing: boolean = false;
-  private chunkSize: number = 5000; // 5 seconds of audio per chunk
+  private chunkSize: number = 2000; // 5 seconds of audio per chunk
 
   constructor(stream: MediaStream, onTranscription: (text: string) => void) {
     this.stream = stream;

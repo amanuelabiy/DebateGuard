@@ -9,27 +9,61 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { transcriptSegment, context } = body;
+    const { transcriptSegment, context } = await request.json();
 
     if (!transcriptSegment) {
       return NextResponse.json(
-        { error: "No transcript provided" },
+        { error: "No transcript segment provided" },
         { status: 400 }
       );
     }
 
-    // Analyze the transcript using ChatGPT
-    const analysis = await analyzeTranscript(transcriptSegment, context);
+    // Create a prompt that asks for a structured JSON response
+    const prompt = `Analyze this debate transcript segment for logical fallacies: "${transcriptSegment}"
 
-    return NextResponse.json({
-      success: true,
-      analysis,
+Return a JSON response in this exact format:
+{
+  "fallacies": [
+    {
+      "type": "Name of the fallacy",
+      "description": "Brief description of the fallacy",
+      "fix": "Suggestion for how to fix this fallacy"
+    }
+  ]
+}
+
+Be concise and focus only on clear logical fallacies.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a debate analysis assistant that identifies logical fallacies and provides fixes. Respond only with valid JSON in the exact format requested."
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 500,
     });
+
+    const analysis = response.choices[0]?.message?.content || "No analysis available";
+    
+    // Try to parse the JSON response
+    try {
+      const parsedAnalysis = JSON.parse(analysis);
+      return NextResponse.json({ analysis: parsedAnalysis });
+    } catch (error) {
+      // If parsing fails, return the raw analysis
+      return NextResponse.json({ analysis: { fallacies: [] } });
+    }
   } catch (error) {
-    console.error("Error in analyze API:", error);
+    console.error("Error analyzing transcript:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to analyze transcript" },
       { status: 500 }
     );
   }

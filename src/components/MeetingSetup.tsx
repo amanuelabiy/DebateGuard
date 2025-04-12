@@ -2,6 +2,7 @@ import {
   DeviceSettings,
   useCall,
   VideoPreview,
+  useCallStateHooks
 } from "@stream-io/video-react-sdk";
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
@@ -12,8 +13,12 @@ import { Button } from "./ui/button";
 function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
   const [isCameraDisabled, setIsCameraDisabled] = useState(true);
   const [isMicDisabled, setIsMicDisabled] = useState(false);
-
+  const { useMicrophoneState } = useCallStateHooks();
   const call = useCall();
+  const {mediaStream} = useMicrophoneState();
+  const recordings: MediaStreamTrack[] = [];
+  const audioTracks = mediaStream?.getAudioTracks() || []; 
+  console.log("Audio tracks", audioTracks);
 
   if (!call) return null;
 
@@ -26,6 +31,15 @@ function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
     if (isMicDisabled) call.microphone.disable();
     else call.microphone.enable();
   }, [isMicDisabled, call.microphone]);
+
+  useEffect(() => {
+    if (audioTracks.length > 0) {
+      recordings.push(...audioTracks);
+      console.log("Recordings", recordings);
+    }
+  }, [audioTracks]);
+
+  
 
   const handleJoin = async () => {
     await call.join();

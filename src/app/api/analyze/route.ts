@@ -1,52 +1,65 @@
-import { NextResponse } from 'next/server';
+// pages/api/analyze.js
 
-export async function POST(request: Request) {
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
   try {
-    const { text, metadata } = await request.json();
+    const body = await request.json();
+    const { transcriptSegment, context } = body;
 
-    if (!text) {
+    if (!transcriptSegment) {
       return NextResponse.json(
-        { error: 'No text provided for analysis' },
+        { success: false, error: 'Missing transcriptSegment in request body.' },
         { status: 400 }
       );
     }
 
-    // TODO: Implement GPT-4 analysis
-    // For now, return a mock response
-    const mockAnalysis = {
-      logicalFallacies: [
-        {
-          type: "ad_hominem",
-          description: "Attacking the person instead of the argument",
-          location: { start: 10, end: 25 }
-        }
-      ],
-      toneIssues: [
-        {
-          type: "aggressive",
-          description: "Language that may escalate conflict",
-          location: { start: 30, end: 45 }
-        }
-      ],
-      mediatorSuggestions: [
-        {
-          type: "intervention",
-          description: "Consider redirecting the conversation to focus on the topic rather than personal attacks",
-          priority: "high"
-        }
-      ],
-      overallAssessment: {
-        score: 0.75,
-        summary: "The debate shows good structure but contains some logical fallacies and tone issues that could be addressed."
-      }
-    };
+    // Craft the prompt using the received transcript segment
+    // context can contain additional info like speaker names, debate session ID, etc.
+    const prompt = `Below is a segment of a debate transcript:
+    
+"${transcriptSegment}"
+  
+Please analyze the segment for any logical fallacies (such as ad hominem, straw man, false dichotomy, etc.) or bad-faith debate tactics. 
+Provide a mediator-style response that includes:
+- A list of detected fallacies (if any).
+- Suggestions on how both parties can reframe their argument constructively.
+- General tone analysis and recommendations for de-escalation if needed.`;
 
-    return NextResponse.json(mockAnalysis);
+    // Call the OpenAI API (for example, GPT-4) with the prompt
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: "You are a debate mediator who offers constructive feedback." },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return NextResponse.json(
+        { success: false, error: data.error?.message || 'AI analysis failed.' },
+        { status: response.status }
+      );
+    }
+
+    // Extract the response text from the AI
+    const analysis = data.choices[0].message.content;
+    return NextResponse.json({ success: true, analysis });
   } catch (error) {
-    console.error('Error analyzing text:', error);
+    console.error('Error during AI analysis:', error);
     return NextResponse.json(
-      { error: 'Failed to analyze text' },
+      { success: false, error: 'Internal Server Error' },
       { status: 500 }
     );
   }
-} 
+}

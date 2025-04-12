@@ -1,8 +1,10 @@
+"use client";
+
 import {
   DeviceSettings,
   useCall,
   VideoPreview,
-  useCallStateHooks
+  useCallStateHooks,
 } from "@stream-io/video-react-sdk";
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
@@ -15,9 +17,9 @@ function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
   const [isMicDisabled, setIsMicDisabled] = useState(false);
   const { useMicrophoneState } = useCallStateHooks();
   const call = useCall();
-  const {mediaStream} = useMicrophoneState();
+  const { mediaStream } = useMicrophoneState();
   const recordings: MediaStreamTrack[] = [];
-  const audioTracks = mediaStream?.getAudioTracks() || []; 
+  const audioTracks = mediaStream?.getAudioTracks() || [];
   console.log("Audio tracks", audioTracks);
 
   if (!call) return null;
@@ -39,11 +41,18 @@ function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
     }
   }, [audioTracks]);
 
-  
-
   const handleJoin = async () => {
-    await call.join();
-    onSetupComplete();
+    if (isJoining) return;
+
+    try {
+      setIsJoining(true);
+      await call.join();
+      onSetupComplete();
+      setIsJoining(false);
+    } catch (error) {
+      console.error("Error joining call:", error);
+      setIsJoining(false);
+    }
   };
 
   return (
@@ -60,15 +69,14 @@ function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
             </div>
 
             {/* VIDEO PREVIEW */}
-            <div className="mt-4 flex-1 min-h-[400px] rounded-xl overflow-hidden bg-muted/50 border relative">
-              <div className="absolute inset-0">
-                <VideoPreview className="h-full w-full" />
+            <div className="mt-4 flex-1 min-h-[400px] rounded-xl overflow-hidden bg-muted/50 border relative w-full h-full">
+              <div className="absolute inset-0 w-full h-full">
+                <VideoPreview className="h-full w-full object-cover" />
               </div>
             </div>
           </Card>
 
           {/* CARD CONTROLS */}
-
           <Card className="md:col-span-1 p-6">
             <div className="h-full flex flex-col">
               {/* MEETING DETAILS  */}
@@ -140,8 +148,13 @@ function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
 
                 {/* JOIN BTN */}
                 <div className="space-y-3 mt-8">
-                  <Button className="w-full" size="lg" onClick={handleJoin}>
-                    Join Meeting
+                  <Button
+                    className="w-full cursor-pointer bg-[#2563EB] hover:bg-[#2563EB]/80"
+                    size="lg"
+                    onClick={handleJoin}
+                    disabled={isJoining}
+                  >
+                    {isJoining ? "Joining..." : "Join Meeting"}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
                     Do not worry, our team is super friendly! We want you to

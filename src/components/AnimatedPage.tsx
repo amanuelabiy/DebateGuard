@@ -2,138 +2,38 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SignOutButton, UserButton } from "@clerk/nextjs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/nextjs";
-import { CreditCard } from "lucide-react";
+import Navbar from "./Navbar";
 
 export default function AnimatedPage() {
-  const { user } = useUser();
-
   return (
     <div className="min-h-screen bg-[#0D1117] text-[#E5E7EB]">
       {/* Navigation */}
-      <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="border-b border-[#2C3E50] py-4"
-      >
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold">
-              <span className="text-[#10B981]">Debate</span>Guard
-            </h1>
-          </div>
-          <div className="hidden md:flex space-x-8 items-center">
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="#features"
-              className="text-[#E5E7EB] hover:text-[#10B981] transition-colors"
-            >
-              Features
-            </motion.a>
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="#how-it-works"
-              className="text-[#E5E7EB] hover:text-[#10B981] transition-colors"
-            >
-              How It Works
-            </motion.a>
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="#about"
-              className="text-[#E5E7EB] hover:text-[#10B981] transition-colors"
-            >
-              About Us
-            </motion.a>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                href="/transcript"
-                className="text-[#E5E7EB] hover:text-[#10B981] transition-colors"
-              >
-                Try It
-              </Link>
-            </motion.div>
-            <div className="flex items-center gap-3">
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: {
-                      width: 35,
-                      height: 35,
-                    },
-                  },
-                }}
-              >
-                <UserButton.MenuItems>
-                  <UserButton.Link
-                    label="Billing"
-                    labelIcon={<CreditCard className="size-4" />}
-                    href="/billing"
-                  />
-                </UserButton.MenuItems>
-              </UserButton>
-            </div>
-          </div>
-          <div className="md:hidden">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="text-[#E5E7EB]"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </motion.button>
-          </div>
-        </div>
-      </motion.nav>
+      <Navbar />
 
       {/* Hero Section */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0D1117] to-[#1F2937] opacity-90"></div>
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between">
+        <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
             <motion.div
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.7, delay: 0.2 }}
-              className="md:w-1/2 mb-12 md:mb-0"
+              className="w-full md:w-1/2 text-center md:text-left"
             >
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
                 Take Your <span className="text-[#10B981]">Debates</span> to the
                 Next Level
               </h1>
-              <p className="text-xl text-[#9CA3AF] mb-6 leading-relaxed">
+              <p className="text-lg md:text-xl text-[#9CA3AF] mb-4 md:mb-6 leading-relaxed">
                 Join us in building a culture of honest, thought-provoking
                 discussions, guided by cutting-edge AI moderation.
               </p>
-              <p className="text-lg text-[#9CA3AF] mb-8 italic">
+              <p className="text-base md:text-lg text-[#9CA3AF] mb-6 md:mb-8 italic">
                 "We believe respectful dialogue is the foundation of progress.
                 That's why we created DebateGuard."
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <motion.div
                   whileHover={{
                     scale: 1.05,
@@ -143,8 +43,8 @@ export default function AnimatedPage() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link
-                    href="/transcript"
-                    className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium py-4 px-8 rounded-lg transition-colors text-center shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all block"
+                    href="/dashboard"
+                    className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium py-3 md:py-4 px-6 md:px-8 rounded-lg transition-colors text-center shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all block"
                   >
                     Start Debating
                   </Link>
@@ -155,7 +55,7 @@ export default function AnimatedPage() {
                 >
                   <Link
                     href="#features"
-                    className="border border-[#2C3E50] hover:bg-[#1F2937] text-[#E5E7EB] font-medium py-4 px-8 rounded-lg transition-colors text-center block"
+                    className="border border-[#2C3E50] hover:bg-[#1F2937] text-[#E5E7EB] font-medium py-3 md:py-4 px-6 md:px-8 rounded-lg transition-colors text-center block"
                   >
                     Learn More
                   </Link>
@@ -166,31 +66,31 @@ export default function AnimatedPage() {
               initial={{ x: 50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.7, delay: 0.4 }}
-              className="md:w-1/2 flex justify-center"
+              className="w-full md:w-1/2 flex justify-center"
             >
-              <div className="relative w-full max-w-md h-80 md:h-96">
+              <div className="relative w-full max-w-md h-64 sm:h-80 md:h-96">
                 <motion.div
                   whileHover={{ scale: 1.02 }}
-                  className="absolute inset-0 bg-gradient-to-br from-[#1F2937] to-[#0D1117] rounded-xl shadow-2xl border border-[#2C3E50] p-6 overflow-hidden"
+                  className="absolute inset-0 bg-gradient-to-br from-[#1F2937] to-[#0D1117] rounded-xl shadow-2xl border border-[#2C3E50] p-4 md:p-6 overflow-hidden"
                 >
                   <div className="flex items-center mb-4">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-2"></div>
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full mr-2"></div>
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     <motion.div
                       initial={{ x: -20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ duration: 0.5, delay: 0.6 }}
                       className="flex items-start"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold mr-3 mt-1">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold mr-3 mt-1 text-sm sm:text-base">
                         A
                       </div>
                       <div className="flex-1">
-                        <div className="h-4 bg-[#2C3E50] rounded w-3/4 mb-2"></div>
-                        <div className="h-4 bg-[#2C3E50] rounded w-1/2"></div>
+                        <div className="h-3 sm:h-4 bg-[#2C3E50] rounded w-3/4 mb-2"></div>
+                        <div className="h-3 sm:h-4 bg-[#2C3E50] rounded w-1/2"></div>
                       </div>
                     </motion.div>
                     <motion.div
@@ -199,12 +99,12 @@ export default function AnimatedPage() {
                       transition={{ duration: 0.5, delay: 0.8 }}
                       className="flex items-start"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#10B981] flex items-center justify-center text-white font-bold mr-3 mt-1">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#10B981] flex items-center justify-center text-white font-bold mr-3 mt-1 text-sm sm:text-base">
                         B
                       </div>
                       <div className="flex-1">
-                        <div className="h-4 bg-[#2C3E50] rounded w-5/6 mb-2"></div>
-                        <div className="h-4 bg-[#2C3E50] rounded w-2/3"></div>
+                        <div className="h-3 sm:h-4 bg-[#2C3E50] rounded w-5/6 mb-2"></div>
+                        <div className="h-3 sm:h-4 bg-[#2C3E50] rounded w-2/3"></div>
                       </div>
                     </motion.div>
                     <motion.div
@@ -213,12 +113,12 @@ export default function AnimatedPage() {
                       transition={{ duration: 0.5, delay: 1 }}
                       className="flex items-start"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold mr-3 mt-1">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold mr-3 mt-1 text-sm sm:text-base">
                         A
                       </div>
                       <div className="flex-1">
-                        <div className="h-4 bg-[#2C3E50] rounded w-3/4 mb-2"></div>
-                        <div className="h-4 bg-[#2C3E50] rounded w-1/2"></div>
+                        <div className="h-3 sm:h-4 bg-[#2C3E50] rounded w-3/4 mb-2"></div>
+                        <div className="h-3 sm:h-4 bg-[#2C3E50] rounded w-1/2"></div>
                       </div>
                     </motion.div>
                   </div>

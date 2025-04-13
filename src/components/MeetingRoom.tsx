@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CallControls,
@@ -9,7 +9,6 @@ import {
   PaginatedGridLayout,
   SpeakerLayout,
   useCallStateHooks,
-  useCall
 } from "@stream-io/video-react-sdk";
 import {
   ResizableHandle,
@@ -26,7 +25,7 @@ import { Button } from "./ui/button";
 import { LayoutListIcon, UsersIcon } from "lucide-react";
 import EndCallButton from "./EndCallButton";
 import DebateContent from "./DebateContent";
-
+import Loader from "./Loader";
 
 function MeetingRoom() {
   const router = useRouter();
@@ -37,6 +36,7 @@ function MeetingRoom() {
   const callingState = useCallCallingState();
 
   if (callingState !== CallingState.JOINED) {
+    return <Loader />;
   }
 
   return (
@@ -67,9 +67,13 @@ function MeetingRoom() {
           <div className="absolute bottom-4 left-0 right-0">
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-2 flex-wrap justify-center px-4">
-                <CallControls onLeave={() => router.push("/")} />
+                <div className="flex items-center justify-center w-full">
+                  <div className="flex justify-center w-full">
+                    <CallControls onLeave={() => router.push("/")} />
+                  </div>
+                </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-center w-full">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="size-10">
@@ -86,6 +90,8 @@ function MeetingRoom() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
+                  <EndCallButton />
+
                   <Button
                     variant="outline"
                     size="icon"
@@ -94,8 +100,6 @@ function MeetingRoom() {
                   >
                     <UsersIcon className="size-4" />
                   </Button>
-
-                  <EndCallButton />
                 </div>
               </div>
             </div>
@@ -104,13 +108,12 @@ function MeetingRoom() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={65} minSize={25}>
-          <DebateContent/>
+          <DebateContent />
           <h1>Argument Analysis Goes here</h1>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   );
 }
-
 
 export default MeetingRoom;

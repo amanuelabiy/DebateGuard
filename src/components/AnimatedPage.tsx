@@ -469,7 +469,7 @@ export default function AnimatedPage() {
                     <h4 className="font-semibold text-[#E5E7EB]">
                       Amanuel Abiy
                     </h4>
-                    <p className="text-[#9CA3AF]">Frontend Developer</p>
+                    <p className="text-[#9CA3AF]">Sophomore Computer Science Student</p>
                   </div>
                 </motion.div>
                 <motion.div
@@ -483,7 +483,7 @@ export default function AnimatedPage() {
                     <h4 className="font-semibold text-[#E5E7EB]">
                       Markose Tsegaye
                     </h4>
-                    <p className="text-[#9CA3AF]">Backend Developer</p>
+                    <p className="text-[#9CA3AF]">Junior Computer Science Student</p>
                   </div>
                 </motion.div>
                 <motion.div
@@ -497,7 +497,7 @@ export default function AnimatedPage() {
                     <h4 className="font-semibold text-[#E5E7EB]">
                       Thomas Schlinke
                     </h4>
-                    <p className="text-[#9CA3AF]">AI Integration Specialist</p>
+                    <p className="text-[#9CA3AF]">Sophomore Computer Science Student</p>
                   </div>
                 </motion.div>
                 <motion.div
@@ -511,7 +511,7 @@ export default function AnimatedPage() {
                     <h4 className="font-semibold text-[#E5E7EB]">
                       Tom Shimoni
                     </h4>
-                    <p className="text-[#9CA3AF]">UI/UX Designer</p>
+                    <p className="text-[#9CA3AF]">Sophomore Computer Science Student</p>
                   </div>
                 </motion.div>
               </div>
@@ -598,7 +598,7 @@ export default function AnimatedPage() {
             </p>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                href="/transcript"
+                href="/dashboard"
                 className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium py-4 px-10 rounded-lg transition-colors inline-block text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
               >
                 Get Started Now

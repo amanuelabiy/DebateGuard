@@ -6,8 +6,6 @@ const useMeetingActions = () => {
   const router = useRouter();
   const client = useStreamVideoClient();
 
-  console.log("Client is initialized", client);
-
   const createInstantMeeting = async () => {
     console.log("Creating lol instant meeting");
     if (!client) return;

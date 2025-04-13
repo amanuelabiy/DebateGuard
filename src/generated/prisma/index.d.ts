@@ -4475,7 +4475,6 @@ export namespace Prisma {
     createdAt: number
     updatedAt: number
     status: number
-    participants: number
     metadata: number
     _all: number
   }
@@ -4500,7 +4499,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     status?: true
-    participants?: true
     metadata?: true
     _all?: true
   }
@@ -4582,7 +4580,6 @@ export namespace Prisma {
     createdAt: Date
     updatedAt: Date
     status: string
-    participants: JsonValue | null
     metadata: JsonValue | null
     _count: DebateSessionCountAggregateOutputType | null
     _min: DebateSessionMinAggregateOutputType | null
@@ -4608,7 +4605,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     status?: boolean
-    participants?: boolean
     metadata?: boolean
     transcript?: boolean | DebateSession$transcriptArgs<ExtArgs>
     analysis?: boolean | DebateSession$analysisArgs<ExtArgs>
@@ -4619,7 +4615,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     status?: boolean
-    participants?: boolean
     metadata?: boolean
   }, ExtArgs["result"]["debateSession"]>
 
@@ -4628,7 +4623,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     status?: boolean
-    participants?: boolean
     metadata?: boolean
   }, ExtArgs["result"]["debateSession"]>
 
@@ -4637,11 +4631,10 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     status?: boolean
-    participants?: boolean
     metadata?: boolean
   }
 
-  export type DebateSessionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "status" | "participants" | "metadata", ExtArgs["result"]["debateSession"]>
+  export type DebateSessionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "status" | "metadata", ExtArgs["result"]["debateSession"]>
   export type DebateSessionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     transcript?: boolean | DebateSession$transcriptArgs<ExtArgs>
     analysis?: boolean | DebateSession$analysisArgs<ExtArgs>
@@ -4660,7 +4653,6 @@ export namespace Prisma {
       createdAt: Date
       updatedAt: Date
       status: string
-      participants: Prisma.JsonValue | null
       metadata: Prisma.JsonValue | null
     }, ExtArgs["result"]["debateSession"]>
     composites: {}
@@ -5091,7 +5083,6 @@ export namespace Prisma {
     readonly createdAt: FieldRef<"DebateSession", 'DateTime'>
     readonly updatedAt: FieldRef<"DebateSession", 'DateTime'>
     readonly status: FieldRef<"DebateSession", 'String'>
-    readonly participants: FieldRef<"DebateSession", 'Json'>
     readonly metadata: FieldRef<"DebateSession", 'Json'>
   }
     
@@ -5551,7 +5542,6 @@ export namespace Prisma {
     id: string | null
     createdAt: Date | null
     updatedAt: Date | null
-    content: string | null
     debateSessionId: string | null
   }
 
@@ -5559,7 +5549,6 @@ export namespace Prisma {
     id: string | null
     createdAt: Date | null
     updatedAt: Date | null
-    content: string | null
     debateSessionId: string | null
   }
 
@@ -5567,7 +5556,8 @@ export namespace Prisma {
     id: number
     createdAt: number
     updatedAt: number
-    content: number
+    speaker1: number
+    speaker2: number
     debateSessionId: number
     _all: number
   }
@@ -5577,7 +5567,6 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     updatedAt?: true
-    content?: true
     debateSessionId?: true
   }
 
@@ -5585,7 +5574,6 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     updatedAt?: true
-    content?: true
     debateSessionId?: true
   }
 
@@ -5593,7 +5581,8 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     updatedAt?: true
-    content?: true
+    speaker1?: true
+    speaker2?: true
     debateSessionId?: true
     _all?: true
   }
@@ -5674,7 +5663,8 @@ export namespace Prisma {
     id: string
     createdAt: Date
     updatedAt: Date
-    content: string
+    speaker1: JsonValue
+    speaker2: JsonValue
     debateSessionId: string
     _count: TranscriptCountAggregateOutputType | null
     _min: TranscriptMinAggregateOutputType | null
@@ -5699,7 +5689,8 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    speaker1?: boolean
+    speaker2?: boolean
     debateSessionId?: boolean
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["transcript"]>
@@ -5708,7 +5699,8 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    speaker1?: boolean
+    speaker2?: boolean
     debateSessionId?: boolean
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["transcript"]>
@@ -5717,7 +5709,8 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    speaker1?: boolean
+    speaker2?: boolean
     debateSessionId?: boolean
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["transcript"]>
@@ -5726,11 +5719,12 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    speaker1?: boolean
+    speaker2?: boolean
     debateSessionId?: boolean
   }
 
-  export type TranscriptOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "content" | "debateSessionId", ExtArgs["result"]["transcript"]>
+  export type TranscriptOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "speaker1" | "speaker2" | "debateSessionId", ExtArgs["result"]["transcript"]>
   export type TranscriptInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }
@@ -5750,7 +5744,8 @@ export namespace Prisma {
       id: string
       createdAt: Date
       updatedAt: Date
-      content: string
+      speaker1: Prisma.JsonValue
+      speaker2: Prisma.JsonValue
       debateSessionId: string
     }, ExtArgs["result"]["transcript"]>
     composites: {}
@@ -6179,7 +6174,8 @@ export namespace Prisma {
     readonly id: FieldRef<"Transcript", 'String'>
     readonly createdAt: FieldRef<"Transcript", 'DateTime'>
     readonly updatedAt: FieldRef<"Transcript", 'DateTime'>
-    readonly content: FieldRef<"Transcript", 'String'>
+    readonly speaker1: FieldRef<"Transcript", 'Json'>
+    readonly speaker2: FieldRef<"Transcript", 'Json'>
     readonly debateSessionId: FieldRef<"Transcript", 'String'>
   }
     
@@ -6609,7 +6605,6 @@ export namespace Prisma {
     id: string | null
     createdAt: Date | null
     updatedAt: Date | null
-    content: string | null
     debateSessionId: string | null
   }
 
@@ -6617,7 +6612,6 @@ export namespace Prisma {
     id: string | null
     createdAt: Date | null
     updatedAt: Date | null
-    content: string | null
     debateSessionId: string | null
   }
 
@@ -6625,7 +6619,7 @@ export namespace Prisma {
     id: number
     createdAt: number
     updatedAt: number
-    content: number
+    fallacies: number
     debateSessionId: number
     _all: number
   }
@@ -6635,7 +6629,6 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     updatedAt?: true
-    content?: true
     debateSessionId?: true
   }
 
@@ -6643,7 +6636,6 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     updatedAt?: true
-    content?: true
     debateSessionId?: true
   }
 
@@ -6651,7 +6643,7 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     updatedAt?: true
-    content?: true
+    fallacies?: true
     debateSessionId?: true
     _all?: true
   }
@@ -6732,7 +6724,7 @@ export namespace Prisma {
     id: string
     createdAt: Date
     updatedAt: Date
-    content: string
+    fallacies: JsonValue
     debateSessionId: string
     _count: AnalysisCountAggregateOutputType | null
     _min: AnalysisMinAggregateOutputType | null
@@ -6757,7 +6749,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    fallacies?: boolean
     debateSessionId?: boolean
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["analysis"]>
@@ -6766,7 +6758,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    fallacies?: boolean
     debateSessionId?: boolean
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["analysis"]>
@@ -6775,7 +6767,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    fallacies?: boolean
     debateSessionId?: boolean
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["analysis"]>
@@ -6784,11 +6776,11 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    content?: boolean
+    fallacies?: boolean
     debateSessionId?: boolean
   }
 
-  export type AnalysisOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "content" | "debateSessionId", ExtArgs["result"]["analysis"]>
+  export type AnalysisOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "fallacies" | "debateSessionId", ExtArgs["result"]["analysis"]>
   export type AnalysisInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     debateSession?: boolean | DebateSessionDefaultArgs<ExtArgs>
   }
@@ -6808,7 +6800,7 @@ export namespace Prisma {
       id: string
       createdAt: Date
       updatedAt: Date
-      content: string
+      fallacies: Prisma.JsonValue
       debateSessionId: string
     }, ExtArgs["result"]["analysis"]>
     composites: {}
@@ -7237,7 +7229,7 @@ export namespace Prisma {
     readonly id: FieldRef<"Analysis", 'String'>
     readonly createdAt: FieldRef<"Analysis", 'DateTime'>
     readonly updatedAt: FieldRef<"Analysis", 'DateTime'>
-    readonly content: FieldRef<"Analysis", 'String'>
+    readonly fallacies: FieldRef<"Analysis", 'Json'>
     readonly debateSessionId: FieldRef<"Analysis", 'String'>
   }
     
@@ -7700,7 +7692,6 @@ export namespace Prisma {
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     status: 'status',
-    participants: 'participants',
     metadata: 'metadata'
   };
 
@@ -7711,7 +7702,8 @@ export namespace Prisma {
     id: 'id',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
-    content: 'content',
+    speaker1: 'speaker1',
+    speaker2: 'speaker2',
     debateSessionId: 'debateSessionId'
   };
 
@@ -7722,7 +7714,7 @@ export namespace Prisma {
     id: 'id',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
-    content: 'content',
+    fallacies: 'fallacies',
     debateSessionId: 'debateSessionId'
   };
 
@@ -7743,6 +7735,13 @@ export namespace Prisma {
   };
 
   export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+  export const JsonNullValueInput: {
+    JsonNull: typeof JsonNull
+  };
+
+  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
   export const QueryMode: {
@@ -7995,7 +7994,6 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"DebateSession"> | Date | string
     updatedAt?: DateTimeFilter<"DebateSession"> | Date | string
     status?: StringFilter<"DebateSession"> | string
-    participants?: JsonNullableFilter<"DebateSession">
     metadata?: JsonNullableFilter<"DebateSession">
     transcript?: XOR<TranscriptNullableScalarRelationFilter, TranscriptWhereInput> | null
     analysis?: XOR<AnalysisNullableScalarRelationFilter, AnalysisWhereInput> | null
@@ -8006,7 +8004,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     status?: SortOrder
-    participants?: SortOrderInput | SortOrder
     metadata?: SortOrderInput | SortOrder
     transcript?: TranscriptOrderByWithRelationInput
     analysis?: AnalysisOrderByWithRelationInput
@@ -8020,7 +8017,6 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"DebateSession"> | Date | string
     updatedAt?: DateTimeFilter<"DebateSession"> | Date | string
     status?: StringFilter<"DebateSession"> | string
-    participants?: JsonNullableFilter<"DebateSession">
     metadata?: JsonNullableFilter<"DebateSession">
     transcript?: XOR<TranscriptNullableScalarRelationFilter, TranscriptWhereInput> | null
     analysis?: XOR<AnalysisNullableScalarRelationFilter, AnalysisWhereInput> | null
@@ -8031,7 +8027,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     status?: SortOrder
-    participants?: SortOrderInput | SortOrder
     metadata?: SortOrderInput | SortOrder
     _count?: DebateSessionCountOrderByAggregateInput
     _max?: DebateSessionMaxOrderByAggregateInput
@@ -8046,7 +8041,6 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"DebateSession"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"DebateSession"> | Date | string
     status?: StringWithAggregatesFilter<"DebateSession"> | string
-    participants?: JsonNullableWithAggregatesFilter<"DebateSession">
     metadata?: JsonNullableWithAggregatesFilter<"DebateSession">
   }
 
@@ -8057,7 +8051,8 @@ export namespace Prisma {
     id?: StringFilter<"Transcript"> | string
     createdAt?: DateTimeFilter<"Transcript"> | Date | string
     updatedAt?: DateTimeFilter<"Transcript"> | Date | string
-    content?: StringFilter<"Transcript"> | string
+    speaker1?: JsonFilter<"Transcript">
+    speaker2?: JsonFilter<"Transcript">
     debateSessionId?: StringFilter<"Transcript"> | string
     debateSession?: XOR<DebateSessionScalarRelationFilter, DebateSessionWhereInput>
   }
@@ -8066,7 +8061,8 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
+    speaker1?: SortOrder
+    speaker2?: SortOrder
     debateSessionId?: SortOrder
     debateSession?: DebateSessionOrderByWithRelationInput
   }
@@ -8079,7 +8075,8 @@ export namespace Prisma {
     NOT?: TranscriptWhereInput | TranscriptWhereInput[]
     createdAt?: DateTimeFilter<"Transcript"> | Date | string
     updatedAt?: DateTimeFilter<"Transcript"> | Date | string
-    content?: StringFilter<"Transcript"> | string
+    speaker1?: JsonFilter<"Transcript">
+    speaker2?: JsonFilter<"Transcript">
     debateSession?: XOR<DebateSessionScalarRelationFilter, DebateSessionWhereInput>
   }, "id" | "debateSessionId">
 
@@ -8087,7 +8084,8 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
+    speaker1?: SortOrder
+    speaker2?: SortOrder
     debateSessionId?: SortOrder
     _count?: TranscriptCountOrderByAggregateInput
     _max?: TranscriptMaxOrderByAggregateInput
@@ -8101,7 +8099,8 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Transcript"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Transcript"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Transcript"> | Date | string
-    content?: StringWithAggregatesFilter<"Transcript"> | string
+    speaker1?: JsonWithAggregatesFilter<"Transcript">
+    speaker2?: JsonWithAggregatesFilter<"Transcript">
     debateSessionId?: StringWithAggregatesFilter<"Transcript"> | string
   }
 
@@ -8112,7 +8111,7 @@ export namespace Prisma {
     id?: StringFilter<"Analysis"> | string
     createdAt?: DateTimeFilter<"Analysis"> | Date | string
     updatedAt?: DateTimeFilter<"Analysis"> | Date | string
-    content?: StringFilter<"Analysis"> | string
+    fallacies?: JsonFilter<"Analysis">
     debateSessionId?: StringFilter<"Analysis"> | string
     debateSession?: XOR<DebateSessionScalarRelationFilter, DebateSessionWhereInput>
   }
@@ -8121,7 +8120,7 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
+    fallacies?: SortOrder
     debateSessionId?: SortOrder
     debateSession?: DebateSessionOrderByWithRelationInput
   }
@@ -8134,7 +8133,7 @@ export namespace Prisma {
     NOT?: AnalysisWhereInput | AnalysisWhereInput[]
     createdAt?: DateTimeFilter<"Analysis"> | Date | string
     updatedAt?: DateTimeFilter<"Analysis"> | Date | string
-    content?: StringFilter<"Analysis"> | string
+    fallacies?: JsonFilter<"Analysis">
     debateSession?: XOR<DebateSessionScalarRelationFilter, DebateSessionWhereInput>
   }, "id" | "debateSessionId">
 
@@ -8142,7 +8141,7 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
+    fallacies?: SortOrder
     debateSessionId?: SortOrder
     _count?: AnalysisCountOrderByAggregateInput
     _max?: AnalysisMaxOrderByAggregateInput
@@ -8156,7 +8155,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Analysis"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Analysis"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Analysis"> | Date | string
-    content?: StringWithAggregatesFilter<"Analysis"> | string
+    fallacies?: JsonWithAggregatesFilter<"Analysis">
     debateSessionId?: StringWithAggregatesFilter<"Analysis"> | string
   }
 
@@ -8298,7 +8297,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptCreateNestedOneWithoutDebateSessionInput
     analysis?: AnalysisCreateNestedOneWithoutDebateSessionInput
@@ -8309,7 +8307,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptUncheckedCreateNestedOneWithoutDebateSessionInput
     analysis?: AnalysisUncheckedCreateNestedOneWithoutDebateSessionInput
@@ -8320,7 +8317,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptUpdateOneWithoutDebateSessionNestedInput
     analysis?: AnalysisUpdateOneWithoutDebateSessionNestedInput
@@ -8331,7 +8327,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptUncheckedUpdateOneWithoutDebateSessionNestedInput
     analysis?: AnalysisUncheckedUpdateOneWithoutDebateSessionNestedInput
@@ -8342,7 +8337,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
@@ -8351,7 +8345,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
@@ -8360,7 +8353,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
   }
 
@@ -8368,7 +8360,8 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    speaker1: JsonNullValueInput | InputJsonValue
+    speaker2: JsonNullValueInput | InputJsonValue
     debateSession: DebateSessionCreateNestedOneWithoutTranscriptInput
   }
 
@@ -8376,7 +8369,8 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    speaker1: JsonNullValueInput | InputJsonValue
+    speaker2: JsonNullValueInput | InputJsonValue
     debateSessionId: string
   }
 
@@ -8384,7 +8378,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    speaker1?: JsonNullValueInput | InputJsonValue
+    speaker2?: JsonNullValueInput | InputJsonValue
     debateSession?: DebateSessionUpdateOneRequiredWithoutTranscriptNestedInput
   }
 
@@ -8392,7 +8387,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    speaker1?: JsonNullValueInput | InputJsonValue
+    speaker2?: JsonNullValueInput | InputJsonValue
     debateSessionId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -8400,7 +8396,8 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    speaker1: JsonNullValueInput | InputJsonValue
+    speaker2: JsonNullValueInput | InputJsonValue
     debateSessionId: string
   }
 
@@ -8408,14 +8405,16 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    speaker1?: JsonNullValueInput | InputJsonValue
+    speaker2?: JsonNullValueInput | InputJsonValue
   }
 
   export type TranscriptUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    speaker1?: JsonNullValueInput | InputJsonValue
+    speaker2?: JsonNullValueInput | InputJsonValue
     debateSessionId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -8423,7 +8422,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    fallacies: JsonNullValueInput | InputJsonValue
     debateSession: DebateSessionCreateNestedOneWithoutAnalysisInput
   }
 
@@ -8431,7 +8430,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    fallacies: JsonNullValueInput | InputJsonValue
     debateSessionId: string
   }
 
@@ -8439,7 +8438,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    fallacies?: JsonNullValueInput | InputJsonValue
     debateSession?: DebateSessionUpdateOneRequiredWithoutAnalysisNestedInput
   }
 
@@ -8447,7 +8446,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    fallacies?: JsonNullValueInput | InputJsonValue
     debateSessionId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -8455,7 +8454,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    fallacies: JsonNullValueInput | InputJsonValue
     debateSessionId: string
   }
 
@@ -8463,14 +8462,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    fallacies?: JsonNullValueInput | InputJsonValue
   }
 
   export type AnalysisUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    fallacies?: JsonNullValueInput | InputJsonValue
     debateSessionId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -8715,7 +8714,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     status?: SortOrder
-    participants?: SortOrder
     metadata?: SortOrder
   }
 
@@ -8758,6 +8756,29 @@ export namespace Prisma {
     _min?: NestedJsonNullableFilter<$PrismaModel>
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
+  export type JsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type DebateSessionScalarRelationFilter = {
     is?: DebateSessionWhereInput
@@ -8768,7 +8789,8 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
+    speaker1?: SortOrder
+    speaker2?: SortOrder
     debateSessionId?: SortOrder
   }
 
@@ -8776,7 +8798,6 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
     debateSessionId?: SortOrder
   }
 
@@ -8784,15 +8805,40 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
     debateSessionId?: SortOrder
+  }
+  export type JsonWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedJsonFilter<$PrismaModel>
+    _max?: NestedJsonFilter<$PrismaModel>
   }
 
   export type AnalysisCountOrderByAggregateInput = {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
+    fallacies?: SortOrder
     debateSessionId?: SortOrder
   }
 
@@ -8800,7 +8846,6 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
     debateSessionId?: SortOrder
   }
 
@@ -8808,7 +8853,6 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    content?: SortOrder
     debateSessionId?: SortOrder
   }
 
@@ -9138,6 +9182,29 @@ export namespace Prisma {
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
+  export type NestedJsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type SegmentCreateWithoutConversationInput = {
     id?: string
@@ -9231,14 +9298,16 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    speaker1: JsonNullValueInput | InputJsonValue
+    speaker2: JsonNullValueInput | InputJsonValue
   }
 
   export type TranscriptUncheckedCreateWithoutDebateSessionInput = {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    speaker1: JsonNullValueInput | InputJsonValue
+    speaker2: JsonNullValueInput | InputJsonValue
   }
 
   export type TranscriptCreateOrConnectWithoutDebateSessionInput = {
@@ -9250,14 +9319,14 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    fallacies: JsonNullValueInput | InputJsonValue
   }
 
   export type AnalysisUncheckedCreateWithoutDebateSessionInput = {
     id?: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    content: string
+    fallacies: JsonNullValueInput | InputJsonValue
   }
 
   export type AnalysisCreateOrConnectWithoutDebateSessionInput = {
@@ -9280,14 +9349,16 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    speaker1?: JsonNullValueInput | InputJsonValue
+    speaker2?: JsonNullValueInput | InputJsonValue
   }
 
   export type TranscriptUncheckedUpdateWithoutDebateSessionInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    speaker1?: JsonNullValueInput | InputJsonValue
+    speaker2?: JsonNullValueInput | InputJsonValue
   }
 
   export type AnalysisUpsertWithoutDebateSessionInput = {
@@ -9305,14 +9376,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    fallacies?: JsonNullValueInput | InputJsonValue
   }
 
   export type AnalysisUncheckedUpdateWithoutDebateSessionInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    content?: StringFieldUpdateOperationsInput | string
+    fallacies?: JsonNullValueInput | InputJsonValue
   }
 
   export type DebateSessionCreateWithoutTranscriptInput = {
@@ -9320,7 +9391,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     analysis?: AnalysisCreateNestedOneWithoutDebateSessionInput
   }
@@ -9330,7 +9400,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     analysis?: AnalysisUncheckedCreateNestedOneWithoutDebateSessionInput
   }
@@ -9356,7 +9425,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     analysis?: AnalysisUpdateOneWithoutDebateSessionNestedInput
   }
@@ -9366,7 +9434,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     analysis?: AnalysisUncheckedUpdateOneWithoutDebateSessionNestedInput
   }
@@ -9376,7 +9443,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptCreateNestedOneWithoutDebateSessionInput
   }
@@ -9386,7 +9452,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     status?: string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptUncheckedCreateNestedOneWithoutDebateSessionInput
   }
@@ -9412,7 +9477,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptUpdateOneWithoutDebateSessionNestedInput
   }
@@ -9422,7 +9486,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    participants?: NullableJsonNullValueInput | InputJsonValue
     metadata?: NullableJsonNullValueInput | InputJsonValue
     transcript?: TranscriptUncheckedUpdateOneWithoutDebateSessionNestedInput
   }

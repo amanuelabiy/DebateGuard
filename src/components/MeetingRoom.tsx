@@ -22,9 +22,10 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { LayoutListIcon, LoaderIcon, UsersIcon } from "lucide-react";
+import { LayoutListIcon, UsersIcon } from "lucide-react";
 import EndCallButton from "./EndCallButton";
-import DebatePage from "@/app/debate/page";
+import DebateContent from "./DebateContent";
+import Loader from "./Loader";
 
 function MeetingRoom() {
   const router = useRouter();
@@ -35,11 +36,7 @@ function MeetingRoom() {
   const callingState = useCallCallingState();
 
   if (callingState !== CallingState.JOINED) {
-    return (
-      <div className="h-96 flex items-center justify-center">
-        <LoaderIcon className="size-6 animate-spin" />
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
@@ -111,7 +108,7 @@ function MeetingRoom() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={65} minSize={25}>
-          <DebatePage />
+          <DebateContent />
           <h1>Argument Analysis Goes here</h1>
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -1,6 +1,6 @@
-import prisma from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -11,13 +11,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log("Received body:", body);
 
     const { transcript, analysis, participants, metadata } = body;
 
     if (!transcript || !analysis || !participants || !metadata) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
+
+    // Get the transcript arrays from the object
+    const transcriptArrays = Object.values(transcript);
+    const speaker1Data = transcriptArrays[0] || [];
+    const speaker2Data = transcriptArrays[1] || [];
 
     const debate = await prisma.debateSession.create({
       data: {
@@ -29,8 +33,8 @@ export async function POST(req: Request) {
         },
         transcript: {
           create: {
-            speaker1: transcript.speaker1,
-            speaker2: transcript.speaker2,
+            speaker1: speaker1Data,
+            speaker2: speaker2Data,
           },
         },
         analysis: {
@@ -45,6 +49,7 @@ export async function POST(req: Request) {
       },
     });
 
+    console.log("Debate created:", debate);
     return NextResponse.json(debate);
   } catch (error) {
     console.error("[DEBATE_POST]", error);

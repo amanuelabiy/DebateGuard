@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Mic, Square, AlertCircle, Timer, Users, Settings } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import DebateStreamProvider from "@/components/DebateStreamProvider";
 import { useStreamTranscription } from "@/hooks/useStreamTranscription";
 import axios from "axios";
+import { StreamVideoParticipant, useCall } from "@stream-io/video-react-sdk";
 
 interface TranscriptSegment {
   speakerId: string;
@@ -53,30 +52,35 @@ function AudioLevelMeter({ level }: { level: number }) {
 }
 
 function DebateContent() {
-  const [currentSpeaker, setCurrentSpeaker] = useState<1 | 2>(1);
+  const [currentSpeaker, setCurrentSpeaker] =
+    useState<StreamVideoParticipant | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [initialTime, setInitialTime] = useState(300); // Initial time in seconds
   const [timeUnit, setTimeUnit] = useState<"minutes" | "seconds">("minutes");
   const [timeInput, setTimeInput] = useState(5); // Default 5 minutes
   const [customTime, setCustomTime] = useState("");
-  const [speaker1Transcript, setSpeaker1Transcript] = useState<
-    TranscriptSegment[]
-  >([]);
-  const [speaker2Transcript, setSpeaker2Transcript] = useState<
-    TranscriptSegment[]
-  >([]);
+  const [speakerTranscripts, setSpeakerTranscripts] = useState<
+    Record<string, TranscriptSegment[]>
+  >({});
   const [fallacies, setFallacies] = useState<Fallacy[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentSegment, setCurrentSegment] = useState("");
   const [showSettings, setShowSettings] = useState(true);
   const [isDebateActive, setIsDebateActive] = useState(false);
-  const [debateSummary, setDebateSummary] = useState<DebateSummary | null>(
-    null
-  );
+  const [debateSummary, setDebateSummary] = useState<{
+    transcripts: Record<string, string>;
+    fallacies: Array<{ speaker: string; fallacy: string; fix: string }>;
+    analysis?: string;
+  } | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [audioLevels, setAudioLevels] = useState<number[]>([0, 0]);
+  const [participants, setParticipants] = useState<StreamVideoParticipant[]>(
+    []
+  );
+
+  const call = useCall();
 
   // Use the Stream transcription hook
   const {
@@ -105,15 +109,17 @@ function DebateContent() {
       if (currentSegment.trim()) {
         const newSegment: TranscriptSegment = {
           text: currentSegment,
-          speakerId: currentSpeaker.toString(),
+          speakerId: currentSpeaker?.userId || "",
           timestamp: new Date().toISOString(),
         };
 
-        if (currentSpeaker === 1) {
-          setSpeaker1Transcript((prev) => [...prev, newSegment]);
-        } else {
-          setSpeaker2Transcript((prev) => [...prev, newSegment]);
-        }
+        setSpeakerTranscripts((prev) => ({
+          ...prev,
+          [currentSpeaker?.userId || ""]: [
+            ...(prev[currentSpeaker?.userId || ""] || []),
+            newSegment,
+          ],
+        }));
         analyzeSegment(currentSegment);
       }
       setIsRecording(false);
@@ -129,21 +135,45 @@ function DebateContent() {
 
   // Effect to handle Stream transcription updates
   useEffect(() => {
-    if (currentSpeaker.toString() && currentSegment) {
+    if (currentSegment) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
-        speakerId: currentSpeaker.toString(),
+        speakerId: currentSpeaker?.userId || "",
         timestamp: new Date().toISOString(),
       };
 
-      if (currentSpeaker === 1) {
-        setSpeaker1Transcript((prev) => [...prev, newSegment]);
-      } else {
-        setSpeaker2Transcript((prev) => [...prev, newSegment]);
-      }
+      setSpeakerTranscripts((prev) => ({
+        ...prev,
+        [currentSpeaker?.userId || ""]: [
+          ...(prev[currentSpeaker?.userId || ""] || []),
+          newSegment,
+        ],
+      }));
       analyzeSegment(currentSegment);
     }
-  }, [currentSpeaker, currentSegment]);
+  }, [currentSegment]);
+
+  useEffect(() => {
+    const subscription = call?.state.participants$.subscribe((participants) => {
+      console.log("Participants updated:", participants);
+      // Convert participants to an array of strings using userId or sessionId
+      setParticipants(participants);
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [call]);
+
+  // Update current speaker when participants change
+  useEffect(() => {
+    if (participants.length > 0 && !currentSpeaker) {
+      setCurrentSpeaker(participants[0]);
+    }
+  }, [participants, currentSpeaker]);
 
   const startRecording = async () => {
     try {
@@ -168,48 +198,57 @@ function DebateContent() {
     if (currentSegment.trim()) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
-        speakerId: currentSpeaker.toString(),
+        speakerId: currentSpeaker?.userId || "",
         timestamp: new Date().toISOString(),
       };
 
-      if (currentSpeaker === 1) {
-        setSpeaker1Transcript((prev) => [...prev, newSegment]);
-      } else {
-        setSpeaker2Transcript((prev) => [...prev, newSegment]);
-      }
+      setSpeakerTranscripts((prev) => ({
+        ...prev,
+        [currentSpeaker?.userId || ""]: [
+          ...(prev[currentSpeaker?.userId || ""] || []),
+          newSegment,
+        ],
+      }));
       analyzeSegment(currentSegment);
     }
   };
 
   const switchSpeaker = () => {
-    if (currentSegment.trim()) {
+    if (currentSegment.trim() && currentSpeaker) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
-        speakerId: currentSpeaker.toString(),
+        speakerId: currentSpeaker.userId,
         timestamp: new Date().toISOString(),
       };
 
-      if (currentSpeaker === 1) {
-        setSpeaker1Transcript((prev) => [...prev, newSegment]);
-      } else {
-        setSpeaker2Transcript((prev) => [...prev, newSegment]);
-      }
+      setSpeakerTranscripts((prev) => ({
+        ...prev,
+        [currentSpeaker.userId]: [
+          ...(prev[currentSpeaker.userId] || []),
+          newSegment,
+        ],
+      }));
       analyzeSegment(currentSegment);
     }
 
     setCurrentSegment("");
-    const newSpeaker = currentSpeaker === 1 ? 2 : 1;
-    setCurrentSpeaker(newSpeaker);
+    if (participants.length === 2) {
+      const newSpeaker = participants.find(
+        (p) => p.userId !== currentSpeaker?.userId
+      );
+      if (newSpeaker) {
+        setCurrentSpeaker(newSpeaker);
+      }
+    }
     setTimeLeft(initialTime);
   };
 
   const analyzeSegment = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !currentSpeaker) return;
 
     console.log("Analyzing segment:", text);
     setIsAnalyzing(true);
     try {
-      console.log("Sending analysis request to API");
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
@@ -217,43 +256,26 @@ function DebateContent() {
         },
         body: JSON.stringify({
           transcriptSegment: text,
-          context: { source: "debate", speaker: currentSpeaker.toString() },
+          context: { source: "debate", speaker: currentSpeaker.name },
         }),
       });
 
       if (!response.ok) {
-        console.error(
-          "Analysis API error:",
-          response.status,
-          response.statusText
-        );
         throw new Error("Failed to analyze transcript");
       }
 
       const data = await response.json();
-      console.log("Analysis response:", data);
-
-      if (
-        data.analysis &&
-        data.analysis.fallacies &&
-        data.analysis.fallacies.length > 0
-      ) {
-        // Convert the API response to our Fallacy format
+      if (data.analysis?.fallacies?.length > 0) {
         const newFallacies: Fallacy[] = data.analysis.fallacies.map(
           (fallacy: any) => ({
             type: fallacy.type,
             description: fallacy.description,
             fix: fallacy.fix,
             timestamp: new Date().toISOString(),
-            speakerId: currentSpeaker.toString(),
+            speakerId: currentSpeaker.userId,
           })
         );
-
-        console.log("Setting new fallacies:", newFallacies);
         setFallacies(newFallacies);
-      } else {
-        // No fallacies detected
-        setFallacies([]);
       }
     } catch (error) {
       console.error("Error analyzing transcript:", error);
@@ -297,12 +319,14 @@ function DebateContent() {
 
   // Get the current speaker's transcript
   const getCurrentTranscript = () => {
-    return currentSpeaker === 1 ? speaker1Transcript : speaker2Transcript;
+    return currentSpeaker?.userId
+      ? speakerTranscripts[currentSpeaker.userId]
+      : [];
   };
 
   // Get all transcripts in chronological order
   const getAllTranscripts = () => {
-    const allTranscripts = [...speaker1Transcript, ...speaker2Transcript];
+    const allTranscripts = Object.values(speakerTranscripts).flat();
     return allTranscripts.sort(
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -325,66 +349,62 @@ function DebateContent() {
   const endDebate = async () => {
     console.log("Ending debate...");
     try {
-      // Stop recording if active
       if (isRecording) {
         stopRecording();
       }
 
-      // Save final segment if exists
-      if (currentSegment.trim()) {
-        const timestamp = new Date().toISOString();
-        if (currentSpeaker === 1) {
-          setSpeaker1Transcript((prev) => [
-            ...prev,
-            {
-              speakerId: "1",
-              text: currentSegment,
-              timestamp,
-            },
-          ]);
-        } else {
-          setSpeaker2Transcript((prev) => [
-            ...prev,
-            {
-              speakerId: "2",
-              text: currentSegment,
-              timestamp,
-            },
-          ]);
-        }
+      if (currentSegment.trim() && currentSpeaker) {
+        const newSegment: TranscriptSegment = {
+          text: currentSegment,
+          speakerId: currentSpeaker.userId,
+          timestamp: new Date().toISOString(),
+        };
+
+        setSpeakerTranscripts((prev) => ({
+          ...prev,
+          [currentSpeaker.userId]: [
+            ...(prev[currentSpeaker.userId] || []),
+            newSegment,
+          ],
+        }));
       }
 
-      // Collect all fallacies
       const allFallacies = fallacies.map((item) => ({
-        speaker: item.speakerId,
+        speaker:
+          participants.find((p) => p.userId === item.speakerId)?.name ||
+          "Unknown",
         fallacy: item.type,
         fix: item.fix,
       }));
 
-      // Create debate summary
-      const summary: DebateSummary = {
-        speaker1Transcript: speaker1Transcript.map((seg) => seg.text).join(" "),
-        speaker2Transcript: speaker2Transcript.map((seg) => seg.text).join(" "),
+      const transcripts = Object.entries(speakerTranscripts).reduce(
+        (acc, [userId, segments]) => {
+          const speaker = participants.find((p) => p.userId === userId);
+          if (speaker) {
+            acc[speaker.name] = segments.map((seg) => seg.text).join(" ");
+          }
+          return acc;
+        },
+        {} as Record<string, string>
+      );
+
+      const summary = {
+        transcripts,
         fallacies: allFallacies,
-        analysis: "Analysis not provided in the API response",
       };
 
       setDebateSummary(summary);
 
       const data = JSON.stringify({
-        transcript: {
-          speaker1: speaker1Transcript,
-          speaker2: speaker2Transcript,
-        },
+        transcript: speakerTranscripts,
         analysis: allFallacies,
-        participants: ["Speaker 1", "Speaker 2"],
+        participants: participants.map((p) => p.name),
         metadata: {
           duration: initialTime - timeLeft,
           timestamp: new Date().toISOString(),
         },
       });
 
-      // Save to API
       await axios.post("/api/debate", data, {
         headers: {
           "Content-Type": "application/json",
@@ -404,11 +424,10 @@ function DebateContent() {
 
   const startNewDebate = () => {
     // Reset all state variables
-    setCurrentSpeaker(1);
+    setCurrentSpeaker(null);
     setIsRecording(false);
     setTimeLeft(initialTime);
-    setSpeaker1Transcript([]);
-    setSpeaker2Transcript([]);
+    setSpeakerTranscripts({});
     setFallacies([]);
     setIsAnalyzing(false);
     setCurrentSegment("");
@@ -449,43 +468,21 @@ function DebateContent() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]">
-                <h3 className="text-lg font-semibold text-[#2563EB] mb-2">
-                  Speaker 1
-                </h3>
-                <div className="max-h-[300px] overflow-y-auto">
-                  {speaker1Transcript.map((segment, index) => (
-                    <div
-                      key={index}
-                      className="mb-2 pb-2 border-b border-[#2C3E50]"
-                    >
-                      <p className="text-sm text-[#9CA3AF]">
-                        {new Date(segment.timestamp).toLocaleTimeString()}
-                      </p>
-                      <p className="text-[#E5E7EB]">{segment.text}</p>
+              {Object.entries(debateSummary.transcripts).map(
+                ([speakerName, transcript]) => (
+                  <div
+                    key={speakerName}
+                    className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]"
+                  >
+                    <h3 className="text-lg font-semibold text-[#2563EB] mb-2">
+                      {speakerName}
+                    </h3>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {transcript}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]">
-                <h3 className="text-lg font-semibold text-[#10B981] mb-2">
-                  Speaker 2
-                </h3>
-                <div className="max-h-[300px] overflow-y-auto">
-                  {speaker2Transcript.map((segment, index) => (
-                    <div
-                      key={index}
-                      className="mb-2 pb-2 border-b border-[#2C3E50]"
-                    >
-                      <p className="text-sm text-[#9CA3AF]">
-                        {new Date(segment.timestamp).toLocaleTimeString()}
-                      </p>
-                      <p className="text-[#E5E7EB]">{segment.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )
+              )}
             </div>
 
             <div className="bg-[#1F2937] p-6 rounded-lg border border-[#2C3E50] mb-8">
@@ -503,7 +500,7 @@ function DebateContent() {
             <div className="flex flex-col md:flex-row justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-[#E5E7EB] mb-4 md:mb-0">
                 Current Speaker:{" "}
-                {currentSpeaker === 1 ? "Speaker 1" : "Speaker 2"}
+                {currentSpeaker?.name || "Waiting for speaker..."}
               </h2>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="text-xl font-bold bg-[#1F2937] text-[#E5E7EB] px-3 py-1 rounded-md border border-[#2C3E50]">
@@ -637,14 +634,14 @@ function DebateContent() {
                       >
                         <p
                           className={`font-medium ${
-                            segment.speakerId === "1"
+                            segment.speakerId === currentSpeaker?.userId
                               ? "text-[#2563EB]"
-                              : "text-[#10B981]"
+                              : "text-[#9CA3AF]"
                           }`}
                         >
-                          {segment.speakerId === "1"
-                            ? "Speaker 1"
-                            : "Speaker 2"}
+                          {segment.speakerId === currentSpeaker?.userId
+                            ? "Current Speaker"
+                            : "Other Speaker"}
                         </p>
                         <p className="text-[#E5E7EB]">{segment.text}</p>
                       </div>
@@ -666,14 +663,14 @@ function DebateContent() {
                           >
                             <p
                               className={`font-medium ${
-                                item.speakerId === "1"
+                                item.speakerId === currentSpeaker?.userId
                                   ? "text-[#2563EB]"
-                                  : "text-[#10B981]"
+                                  : "text-[#9CA3AF]"
                               }`}
                             >
-                              {item.speakerId === "1"
-                                ? "Speaker 1"
-                                : "Speaker 2"}
+                              {item.speakerId === currentSpeaker?.userId
+                                ? "Current Speaker"
+                                : "Other Speaker"}
                             </p>
                             <p className="text-red-400 font-semibold">
                               Fallacy: {item.type}
@@ -698,10 +695,4 @@ function DebateContent() {
   );
 }
 
-export default function DebatePage() {
-  return (
-    <DebateStreamProvider>
-      <DebateContent />
-    </DebateStreamProvider>
-  );
-}
+export default DebateContent;

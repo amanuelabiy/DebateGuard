@@ -6,6 +6,8 @@ import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import DebateStreamProvider from "@/components/DebateStreamProvider";
 import { useStreamTranscription } from "@/hooks/useStreamTranscription";
+import { StreamVideoParticipant, useCall } from "@stream-io/video-react-sdk";
+import axios from "axios";
 
 interface TranscriptSegment {
   speakerId: string;
@@ -27,8 +29,7 @@ interface Fallacy {
 }
 
 interface DebateSummary {
-  speaker1Transcript: string;
-  speaker2Transcript: string;
+  transcripts: Record<string, string>;
   fallacies: {
     speaker: string;
     fallacy: string;
@@ -36,6 +37,7 @@ interface DebateSummary {
     timestamp: string;
     description: string;
   }[];
+  analysis?: string;
 }
 
 function AudioLevelMeter({ level }: { level: number }) {
@@ -53,25 +55,30 @@ function AudioLevelMeter({ level }: { level: number }) {
 }
 
 function DebateContent() {
-  const [currentSpeaker, setCurrentSpeaker] = useState<1 | 2>(1);
+  const [currentSpeaker, setCurrentSpeaker] =
+    useState<StreamVideoParticipant | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [initialTime, setInitialTime] = useState(300); // Initial time in seconds
   const [isDebateActive, setIsDebateActive] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [speaker1Transcript, setSpeaker1Transcript] = useState<
-    TranscriptSegment[]
-  >([]);
-  const [speaker2Transcript, setSpeaker2Transcript] = useState<
-    TranscriptSegment[]
-  >([]);
+  const [speakerTranscripts, setSpeakerTranscripts] = useState<
+    Record<string, TranscriptSegment[]>
+  >({});
   const [fallacies, setFallacies] = useState<Fallacy[]>([]);
   const [currentSegment, setCurrentSegment] = useState("");
-  const [debateSummary, setDebateSummary] = useState<DebateSummary | null>(null);
+  const [debateSummary, setDebateSummary] = useState<DebateSummary | null>(
+    null
+  );
+  const [participants, setParticipants] = useState<StreamVideoParticipant[]>(
+    []
+  );
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const call = useCall();
 
+  console.log("call", call);
   // Use the Stream transcription hook
   const {
     transcript: streamTranscript,
@@ -85,9 +92,7 @@ function DebateContent() {
   // Update current segment from Stream transcription
   useEffect(() => {
     if (streamCurrentSegment) {
-    
       setCurrentSegment(streamCurrentSegment);
-      console.log("Current segment:", currentSegment);
     }
   }, [streamCurrentSegment]);
 
@@ -99,18 +104,20 @@ function DebateContent() {
       }, 1000);
     } else if (timeLeft === 0) {
       // Save the current segment before switching
-      if (currentSegment.trim()) {
+      if (currentSegment.trim() && currentSpeaker) {
         const newSegment: TranscriptSegment = {
           text: currentSegment,
-          speakerId: currentSpeaker.toString(),
+          speakerId: currentSpeaker.userId,
           timestamp: new Date().toISOString(),
         };
 
-        if (currentSpeaker === 1) {
-          setSpeaker1Transcript((prev) => [...prev, newSegment]);
-        } else {
-          setSpeaker2Transcript((prev) => [...prev, newSegment]);
-        }
+        setSpeakerTranscripts((prev) => ({
+          ...prev,
+          [currentSpeaker.userId]: [
+            ...(prev[currentSpeaker.userId] || []),
+            newSegment,
+          ],
+        }));
         analyzeSegment(currentSegment);
       }
       setIsRecording(false);
@@ -124,7 +131,26 @@ function DebateContent() {
     };
   }, [isRecording, timeLeft]);
 
+  // Effect to handle participants
+  useEffect(() => {
+    const subscription = call?.state.participants$.subscribe((participants) => {
+      console.log("Participants updated:", participants);
+      setParticipants(participants);
+    });
 
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [call]);
+
+  // Update current speaker when participants change
+  useEffect(() => {
+    if (participants.length > 0 && !currentSpeaker) {
+      setCurrentSpeaker(participants[0]);
+    }
+  }, [participants, currentSpeaker]);
 
   const startRecording = async () => {
     try {
@@ -146,44 +172,56 @@ function DebateContent() {
     }
 
     // Save the current segment before stopping
-    if (currentSegment.trim()) {
+    if (currentSegment.trim() && currentSpeaker) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
-        speakerId: currentSpeaker.toString(),
+        speakerId: currentSpeaker.userId,
         timestamp: new Date().toISOString(),
       };
 
-      if (currentSpeaker === 1) {
-        setSpeaker1Transcript((prev) => [...prev, newSegment]);
-      } else {
-        setSpeaker2Transcript((prev) => [...prev, newSegment]);
-      }
+      setSpeakerTranscripts((prev) => ({
+        ...prev,
+        [currentSpeaker.userId]: [
+          ...(prev[currentSpeaker.userId] || []),
+          newSegment,
+        ],
+      }));
       analyzeSegment(currentSegment);
     }
   };
 
   const switchSpeaker = async () => {
-    if (currentSegment.trim()) {
+    if (currentSegment.trim() && currentSpeaker) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
-        speakerId: currentSpeaker.toString(),
+        speakerId: currentSpeaker.userId,
         timestamp: new Date().toISOString(),
       };
 
       // Wait for 2 seconds before appending the transcript
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      if (currentSpeaker === 1) {
-        setSpeaker1Transcript((prev) => [...prev, newSegment]);
-      } else {
-        setSpeaker2Transcript((prev) => [...prev, newSegment]);
-      }
+      setSpeakerTranscripts((prev) => ({
+        ...prev,
+        [currentSpeaker.userId]: [
+          ...(prev[currentSpeaker.userId] || []),
+          newSegment,
+        ],
+      }));
       analyzeSegment(currentSegment);
     }
 
-    const newSpeaker = currentSpeaker === 1 ? 2 : 1;
-    switchStreamSpeaker(newSpeaker); // Use the hook's switchSpeaker function
-    setCurrentSpeaker(newSpeaker);
+    const newSpeaker = participants.find(
+      (p) => p.userId !== currentSpeaker?.userId
+    );
+    if (newSpeaker) {
+      setCurrentSpeaker(newSpeaker);
+      // Use the participant's index for switchStreamSpeaker
+      const speakerIndex = participants.findIndex(
+        (p) => p.userId === newSpeaker.userId
+      );
+      switchStreamSpeaker(speakerIndex);
+    }
     setTimeLeft(initialTime);
   };
 
@@ -206,7 +244,7 @@ function DebateContent() {
         },
         body: JSON.stringify({
           transcriptSegment: text,
-          context: { source: "debate", speaker: currentSpeaker.toString() },
+          context: { source: "debate", speaker: currentSpeaker?.userId },
         }),
       });
 
@@ -234,12 +272,12 @@ function DebateContent() {
             description: fallacy.description,
             fix: fallacy.fix,
             timestamp: new Date().toISOString(),
-            speakerId: currentSpeaker.toString(),
+            speakerId: currentSpeaker?.userId || "",
           })
         );
 
         console.log("Appending new fallacies:", newFallacies);
-        setFallacies(prev => [...prev, ...newFallacies]);
+        setFallacies((prev) => [...prev, ...newFallacies]);
       } else {
         // No fallacies detected in this segment, but keep existing fallacies
         console.log("No fallacies detected in this segment");
@@ -265,12 +303,14 @@ function DebateContent() {
 
   // Get the current speaker's transcript
   const getCurrentTranscript = () => {
-    return currentSpeaker === 1 ? speaker1Transcript : speaker2Transcript;
+    return currentSpeaker
+      ? speakerTranscripts[currentSpeaker.userId] || []
+      : [];
   };
 
   // Get all transcripts in chronological order
   const getAllTranscripts = () => {
-    const allTranscripts = [...speaker1Transcript, ...speaker2Transcript];
+    const allTranscripts = Object.values(speakerTranscripts).flat();
     return allTranscripts.sort(
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -293,250 +333,157 @@ function DebateContent() {
   const endDebate = async () => {
     console.log("Ending debate...");
     try {
-      // Stop recording if active
       if (isRecording) {
         stopRecording();
       }
 
-      // Stop listening by setting isRecording to false
-      setIsRecording(false);
+      if (currentSegment.trim() && currentSpeaker) {
+        const newSegment: TranscriptSegment = {
+          text: currentSegment,
+          speakerId: currentSpeaker.userId,
+          timestamp: new Date().toISOString(),
+        };
 
-      // Save final segment if exists
-      if (currentSegment.trim()) {
-        const timestamp = new Date().toISOString();
-        if (currentSpeaker === 1) {
-          setSpeaker1Transcript((prev) => [
-            ...prev,
-            {
-              speakerId: "1",
-              text: currentSegment,
-              timestamp,
-            },
-          ]);
-        } else {
-          setSpeaker2Transcript((prev) => [
-            ...prev,
-            {
-              speakerId: "2",
-              text: currentSegment,
-              timestamp,
-            },
-          ]);
-        }
+        setSpeakerTranscripts((prev) => ({
+          ...prev,
+          [currentSpeaker.userId]: [
+            ...(prev[currentSpeaker.userId] || []),
+            newSegment,
+          ],
+        }));
       }
 
-      // Show loading state
-      setIsAnalyzing(true);
-      
-      // Wait for 3 seconds before showing all fallacies
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Collect all fallacies with proper formatting
       const allFallacies = fallacies.map((item) => ({
-        speaker: `Speaker ${item.speakerId}`,
+        speaker:
+          participants.find((p) => p.userId === item.speakerId)?.name ||
+          "Unknown",
         fallacy: item.type,
         fix: item.fix,
         timestamp: item.timestamp,
-        description: item.description
+        description: item.description,
       }));
 
-      // Create debate summary with properly ordered transcripts
+      const transcripts = Object.entries(speakerTranscripts).reduce(
+        (acc, [userId, segments]) => {
+          const speaker = participants.find((p) => p.userId === userId);
+          if (speaker) {
+            acc[speaker.name] = segments.map((seg) => seg.text).join(" ");
+          }
+          return acc;
+        },
+        {} as Record<string, string>
+      );
+
       const summary: DebateSummary = {
-        speaker1Transcript: speaker1Transcript
-          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-          .map((seg) => seg.text)
-          .join(" "),
-        speaker2Transcript: speaker2Transcript
-          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-          .map((seg) => seg.text)
-          .join(" "),
-        fallacies: allFallacies.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
+        transcripts,
+        fallacies: allFallacies,
       };
 
       setDebateSummary(summary);
 
-      // Save to API
-      const response = await fetch("/api/debate", {
-        method: "POST",
+      const data = JSON.stringify({
+        transcript: speakerTranscripts,
+        analysis: allFallacies,
+        participants: participants.map((p) => p.name),
+        metadata: {
+          duration: initialTime - timeLeft,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      await axios.post("/api/debate", data, {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          transcript: {
-            speaker1: speaker1Transcript.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
-            speaker2: speaker2Transcript.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
-          },
-          analysis: allFallacies,
-          participants: ["Speaker 1", "Speaker 2"],
-          metadata: {
-            duration: initialTime - timeLeft,
-            timestamp: new Date().toISOString(),
-          },
-        }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save debate");
-      }
 
       toast.success("Debate saved successfully");
       setIsDebateActive(false);
       setShowSettings(true);
-      setIsAnalyzing(false);
     } catch (error) {
       console.error("Error ending debate:", error);
       toast.error("Failed to save debate");
-      setIsAnalyzing(false);
+      setIsDebateActive(false);
+      setShowSettings(true);
     }
   };
 
- 
+  const startNewDebate = () => {
+    setDebateSummary(null);
+    setSpeakerTranscripts({});
+    setFallacies([]);
+    setCurrentSegment("");
+    setTimeLeft(initialTime);
+  };
+
   return (
     <div className="flex h-screen">
-      {/* Left side - Video call (20% width) */}
-      <div className="w-1/5 bg-gray-900 p-4 flex flex-col">
-        <div className="flex-1 flex flex-col">
-          {/* Main speaker video */}
-          <div className="bg-gray-800 rounded-lg mb-4 aspect-video flex items-center justify-center">
-            <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
-              {currentSpeaker === 1 ? "S1" : "S2"}
-            </div>
-          </div>
-
-          {/* Secondary speaker video */}
-          <div className="bg-gray-800 rounded-lg aspect-video flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-xl font-bold">
-              {currentSpeaker === 1 ? "S2" : "S1"}
-            </div>
-          </div>
-        </div>
-
-        {/* Call controls */}
-        <div className="flex justify-center space-x-4 py-4">
-          <button className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
-            <Mic size={20} />
-          </button>
-          <button className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
-            <Settings size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Right side - Fallacy checker and transcription (80% width) */}
-      <div className="w-4/5 bg-white p-6 overflow-y-auto">
+      {/* Main content - Full width */}
+      <div className="w-full bg-[#0D1117] p-6 overflow-y-auto">
         {debateSummary ? (
           // Debate summary view
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-blue-700 mb-6">
-              Debate Summary
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-700 mb-2">
-                  Speaker 1
-                </h3>
-                <div className="max-h-[300px] overflow-y-auto">
-                  {speaker1Transcript.map((segment, index) => (
-                    <div
-                      key={index}
-                      className="mb-2 pb-2 border-b border-blue-200"
-                    >
-                      <p className="text-sm text-gray-500">
-                        {new Date(segment.timestamp).toLocaleTimeString()}
-                      </p>
-                      <p className="text-gray-800">{segment.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h3 className="text-lg font-semibold text-green-700 mb-2">
-                  Speaker 2
-                </h3>
-                <div className="max-h-[300px] overflow-y-auto">
-                  {speaker2Transcript.map((segment, index) => (
-                    <div
-                      key={index}
-                      className="mb-2 pb-2 border-b border-green-200"
-                    >
-                      <p className="text-sm text-gray-500">
-                        {new Date(segment.timestamp).toLocaleTimeString()}
-                      </p>
-                      <p className="text-gray-800">{segment.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">All Detected Fallacies</h3>
-              {debateSummary?.fallacies && debateSummary.fallacies.length > 0 ? (
-                <div className="space-y-2">
-                  {debateSummary.fallacies.map((fallacy, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-red-50 border border-red-200 rounded-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-red-700">
-                          {fallacy.fallacy}
-                        </span>
-                        <span className="text-sm text-red-500">
-                          {fallacy.speaker}
-                        </span>
-                      </div>
-                      <p className="text-sm text-red-600 mt-1">
-                        {fallacy.description}
-                      </p>
-                      <p className="text-sm text-red-500 mt-1">
-                        Suggested fix: {fallacy.fix}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-green-700">No fallacies were detected during this debate.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-center">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#E5E7EB]">
+                Debate Summary
+              </h2>
               <Button
-                onClick={() => {
-                  setDebateSummary(null);
-                  setSpeaker1Transcript([]);
-                  setSpeaker2Transcript([]);
-                  setFallacies([]);
-                  setCurrentSegment("");
-                  setTimeLeft(initialTime);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={startNewDebate}
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
               >
                 Start New Debate
               </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {Object.entries(debateSummary.transcripts).map(
+                ([speakerName, transcript]) => (
+                  <div
+                    key={speakerName}
+                    className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]"
+                  >
+                    <h3 className="text-lg font-semibold text-[#2563EB] mb-2">
+                      {speakerName}
+                    </h3>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      <p className="text-[#E5E7EB]">{transcript}</p>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+
+            <div className="bg-[#1F2937] p-6 rounded-lg border border-[#2C3E50] mb-8">
+              <h3 className="text-xl font-semibold text-[#E5E7EB] mb-4">
+                Debate Analysis
+              </h3>
+              <div className="prose max-w-none">
+                <p className="text-[#E5E7EB]">{debateSummary.analysis}</p>
+              </div>
             </div>
           </div>
         ) : (
           // Active debate view
           <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-blue-700">
-                Debate Session
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#E5E7EB] mb-4 md:mb-0">
+                Current Speaker:{" "}
+                {currentSpeaker?.name || "Waiting for speaker..."}
               </h2>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center bg-blue-100 px-3 py-1 rounded-full">
-                  <Timer className="h-4 w-4 text-blue-700 mr-1" />
-                  <span className="text-blue-700 font-medium">
-                    {formatTime(timeLeft)}
-                  </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-xl font-bold bg-[#1F2937] text-[#E5E7EB] px-3 py-1 rounded-md border border-[#2C3E50]">
+                  {formatTime(timeLeft)}
                 </div>
                 <Button
+                  onClick={switchSpeaker}
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
+                  disabled={!isRecording}
+                >
+                  Switch Speaker
+                </Button>
+                <Button
                   onClick={endDebate}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-[#E5E7EB]"
                 >
                   End Debate
                 </Button>
@@ -548,24 +495,24 @@ function DebateContent() {
               <div>
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-semibold text-blue-700">
+                    <h3 className="text-lg font-semibold text-[#E5E7EB]">
                       Controls
                     </h3>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={isRecording ? stopRecording : startRecording}
                       className={
                         isRecording
-                          ? "bg-red-600 hover:bg-red-700 text-white"
-                          : "bg-green-600 hover:bg-green-700 text-white"
+                          ? "bg-red-600 hover:bg-red-700 text-[#E5E7EB]"
+                          : "bg-[#10B981] hover:bg-[#059669] text-[#E5E7EB]"
                       }
                     >
                       {isRecording ? "Stop Recording" : "Start Recording"}
                     </Button>
                     <Button
                       onClick={switchSpeaker}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
                       disabled={!isRecording}
                     >
                       Switch Speaker
@@ -574,36 +521,36 @@ function DebateContent() {
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Live Transcription
                   </h3>
-                  <div className="bg-blue-50 p-4 rounded-md min-h-[100px] border border-blue-200">
-                    <p className="text-gray-800">
+                  <div className="bg-[#1F2937] p-4 rounded-md min-h-[100px] border border-[#2C3E50]">
+                    <p className="text-[#E5E7EB]">
                       {currentSegment || "Waiting for speech..."}
                     </p>
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Timer Settings
                   </h3>
                   <div className="flex space-x-2">
                     <Button
                       onClick={() => handleTimeChange(3)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                      className="bg-[#1F2937] hover:bg-[#374151] text-[#E5E7EB] border border-[#2C3E50]"
                     >
                       3 min
                     </Button>
                     <Button
                       onClick={() => handleTimeChange(5)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                      className="bg-[#1F2937] hover:bg-[#374151] text-[#E5E7EB] border border-[#2C3E50]"
                     >
                       5 min
                     </Button>
                     <Button
                       onClick={() => handleTimeChange(10)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                      className="bg-[#1F2937] hover:bg-[#374151] text-[#E5E7EB] border border-[#2C3E50]"
                     >
                       10 min
                     </Button>
@@ -614,59 +561,69 @@ function DebateContent() {
               {/* Right column - Transcript history and fallacies */}
               <div>
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Transcript History
                   </h3>
-                  <div className="bg-gray-50 p-4 rounded-md max-h-[300px] overflow-y-auto border border-gray-200">
+                  <div className="bg-[#1F2937] p-4 rounded-md max-h-[300px] overflow-y-auto border border-[#2C3E50]">
                     {getAllTranscripts().map((segment, index) => (
-                      <div key={index} className="border-b pb-2 mb-2">
-                        <div className="flex justify-between">
-                          <p className="font-medium text-blue-700">
-                            {segment.speakerId === "1"
-                              ? "Speaker 1"
-                              : "Speaker 2"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(segment.timestamp).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <p className="text-gray-800">{segment.text}</p>
+                      <div
+                        key={index}
+                        className="border-b pb-2 border-[#2C3E50]"
+                      >
+                        <p
+                          className={`font-medium ${
+                            segment.speakerId === currentSpeaker?.userId
+                              ? "text-[#2563EB]"
+                              : "text-[#9CA3AF]"
+                          }`}
+                        >
+                          {segment.speakerId === currentSpeaker?.userId
+                            ? "Current Speaker"
+                            : "Other Speaker"}
+                        </p>
+                        <p className="text-[#E5E7EB]">{segment.text}</p>
                       </div>
                     ))}
-                    {getAllTranscripts().length === 0 && (
-                      <p className="text-gray-500 italic">
-                        No transcript yet. Start recording to see transcriptions
-                        here.
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
+                    Detected Fallacies
+                  </h3>
+                  <div className="bg-[#1F2937] p-4 rounded-md border border-[#2C3E50]">
+                    {fallacies.length > 0 ? (
+                      <ul className="space-y-2">
+                        {fallacies.map((item, index) => (
+                          <li
+                            key={index}
+                            className="border-b pb-2 border-[#2C3E50]"
+                          >
+                            <p
+                              className={`font-medium ${
+                                item.speakerId === currentSpeaker?.userId
+                                  ? "text-[#2563EB]"
+                                  : "text-[#9CA3AF]"
+                              }`}
+                            >
+                              {item.speakerId === currentSpeaker?.userId
+                                ? "Current Speaker"
+                                : "Other Speaker"}
+                            </p>
+                            <p className="text-red-400 font-semibold">
+                              Fallacy: {item.type}
+                            </p>
+                            <p className="text-[#10B981]">Fix: {item.fix}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[#9CA3AF]">
+                        No fallacies detected yet
                       </p>
                     )}
                   </div>
                 </div>
-
-                {/* Show only the latest fallacy during active debate */}
-                {fallacies.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-red-700 mb-2">
-                      Latest Fallacy Detected
-                    </h3>
-                    <div className="bg-red-50 p-4 rounded-md border border-red-200">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-red-700">
-                          Speaker {fallacies[fallacies.length - 1].speakerId}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(fallacies[fallacies.length - 1].timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <p className="text-gray-800">
-                        <strong>{fallacies[fallacies.length - 1].type}:</strong>{" "}
-                        {fallacies[fallacies.length - 1].description}
-                      </p>
-                      <p className="text-green-700 text-sm">
-                        <strong>Fix:</strong> {fallacies[fallacies.length - 1].fix}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

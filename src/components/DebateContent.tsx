@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Mic, Square, AlertCircle, Timer, Users, Settings } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,11 @@ import DebateStreamProvider from "@/components/DebateStreamProvider";
 import { useStreamTranscription } from "@/hooks/useStreamTranscription";
 import { StreamVideoParticipant, useCall } from "@stream-io/video-react-sdk";
 import axios from "axios";
+import { io } from "socket.io-client";
+import { useParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+
+const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
 
 interface TranscriptSegment {
   speakerId: string;
@@ -55,6 +60,7 @@ function AudioLevelMeter({ level }: { level: number }) {
 }
 
 function DebateContent() {
+  const { id } = useParams();
   const [currentSpeaker, setCurrentSpeaker] =
     useState<StreamVideoParticipant | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -75,10 +81,112 @@ function DebateContent() {
     []
   );
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const user = useUser();
+  const [isConnected, setIsConnected] = useState(false);
 
   const call = useCall();
 
-  console.log("call", call);
+  const socket = useMemo(
+    () =>
+      io(socketUrl, {
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        forceNew: true,
+      }),
+    []
+  );
+
+  // Add connection status logging
+  useEffect(() => {
+    if (socket) {
+      socket.on("connect", () => {
+        console.log("Socket connected with ID:", socket.id);
+        setIsConnected(true);
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+        setIsConnected(false);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Socket disconnected");
+        setIsConnected(false);
+      });
+    }
+  }, [socket]);
+
+  // Join meeting room and handle socket events
+  useEffect(() => {
+    if (id && user?.user?.username) {
+      socket.emit("join", {
+        meetingId: id,
+        username: user.user.username,
+      });
+    }
+
+    socket.on("debateState", (state) => {
+      setIsRecording(state.isRecording);
+      setTimeLeft(state.timeLeft);
+      setInitialTime(state.initialTime);
+      setIsDebateActive(state.isDebateActive);
+      setShowSettings(state.showSettings);
+      if (state.currentSpeaker) {
+        const speaker = participants.find(
+          (p) => p.userId === state.currentSpeaker
+        );
+        if (speaker) setCurrentSpeaker(speaker);
+      }
+    });
+
+    socket.on("currentSegment", (segment) => {
+      setCurrentSegment(segment);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [id, user?.user?.username, participants]);
+
+  // Update server when local state changes
+  useEffect(() => {
+    if (id) {
+      socket.emit("updateDebateState", {
+        meetingId: id,
+        state: {
+          currentSpeaker: currentSpeaker?.userId || null,
+          isRecording,
+          timeLeft,
+          initialTime,
+          isDebateActive,
+          showSettings,
+          currentSegment,
+        },
+      });
+    }
+  }, [
+    currentSpeaker,
+    isRecording,
+    timeLeft,
+    initialTime,
+    isDebateActive,
+    showSettings,
+    id,
+  ]);
+
+  // Update server when current segment changes
+  useEffect(() => {
+    if (id && currentSegment) {
+      socket.emit("updateCurrentSegment", {
+        meetingId: id,
+        segment: currentSegment,
+      });
+    }
+  }, [currentSegment, id]);
+
   // Use the Stream transcription hook
   const {
     transcript: streamTranscript,
@@ -100,10 +208,25 @@ function DebateContent() {
   useEffect(() => {
     if (isRecording && timeLeft > 0) {
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        const newTimeLeft = timeLeft - 1;
+        const newState = {
+          isRecording,
+          timeLeft: newTimeLeft,
+          initialTime,
+          showSettings,
+          isDebateActive,
+          currentSpeaker: currentSpeaker?.userId || null,
+          currentSegment,
+        };
+
+        socket.emit("updateDebateState", {
+          meetingId: id,
+          state: newState,
+        });
+
+        setTimeLeft(newTimeLeft);
       }, 1000);
     } else if (timeLeft === 0) {
-      // Save the current segment before switching
       if (currentSegment.trim() && currentSpeaker) {
         const newSegment: TranscriptSegment = {
           text: currentSegment,
@@ -121,7 +244,7 @@ function DebateContent() {
         analyzeSegment(currentSegment);
       }
       setIsRecording(false);
-      switchSpeaker();
+      switchStreamSpeaker(0);
     }
 
     return () => {
@@ -134,7 +257,6 @@ function DebateContent() {
   // Effect to handle participants
   useEffect(() => {
     const subscription = call?.state.participants$.subscribe((participants) => {
-      console.log("Participants updated:", participants);
       setParticipants(participants);
     });
 
@@ -154,11 +276,20 @@ function DebateContent() {
 
   const startRecording = async () => {
     try {
+      const newState = {
+        timeLeft,
+      };
+
+      socket.emit("updateDebateState", {
+        meetingId: id,
+        state: newState,
+      });
+
       setIsRecording(true);
       setTimeLeft(initialTime);
       setShowSettings(false);
       setIsDebateActive(true);
-      clearStreamTranscript(); // Clear any previous transcript
+      clearStreamTranscript();
     } catch (error) {
       console.error("Error starting recording:", error);
       toast.error("Failed to start recording");
@@ -166,12 +297,20 @@ function DebateContent() {
   };
 
   const stopRecording = () => {
+    const newState = {
+      timeLeft,
+    };
+
+    socket.emit("updateDebateState", {
+      meetingId: id,
+      state: newState,
+    });
+
     setIsRecording(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
-    // Save the current segment before stopping
     if (currentSegment.trim() && currentSpeaker) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
@@ -296,9 +435,24 @@ function DebateContent() {
   };
 
   const handleTimeChange = (minutes: number) => {
-    console.log("Changing time to:", minutes, "minutes");
-    setInitialTime(minutes * 60);
-    setTimeLeft(minutes * 60);
+    const newTime = minutes * 60;
+    const newState = {
+      isRecording,
+      timeLeft: newTime,
+      initialTime: newTime,
+      showSettings,
+      isDebateActive,
+      currentSpeaker: currentSpeaker?.userId || null,
+      currentSegment,
+    };
+
+    socket.emit("updateDebateState", {
+      meetingId: id,
+      state: newState,
+    });
+
+    setInitialTime(newTime);
+    setTimeLeft(newTime);
   };
 
   // Get the current speaker's transcript

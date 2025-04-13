@@ -400,6 +400,33 @@ function DebateContent() {
     }
   };
 
+  const startNewDebate = () => {
+    // Reset all state variables
+    setCurrentSpeaker(1);
+    setIsRecording(false);
+    setTimeLeft(initialTime);
+    setSpeaker1Transcript([]);
+    setSpeaker2Transcript([]);
+    setFallacies([]);
+    setIsAnalyzing(false);
+    setCurrentSegment("");
+    setShowSettings(true);
+    setIsDebateActive(false);
+    setDebateSummary(null);
+    setCustomTime('');
+    
+    // Clear any existing timers
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Clear stream transcript
+    clearStreamTranscript();
+    
+    toast.success("New debate started");
+  };
+
   return (
     <div className="flex h-screen">
       {/* Main content - Full width */}
@@ -407,13 +434,21 @@ function DebateContent() {
         {debateSummary ? (
           // Debate summary view
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-[#E5E7EB] mb-6">
-              Debate Summary
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#E5E7EB]">
+                Debate Summary
+              </h2>
+              <Button
+                onClick={startNewDebate}
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
+              >
+                Start New Debate
+              </Button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]">
-                <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
+                <h3 className="text-lg font-semibold text-[#2563EB] mb-2">
                   Speaker 1
                 </h3>
                 <div className="max-h-[300px] overflow-y-auto">
@@ -432,7 +467,7 @@ function DebateContent() {
               </div>
 
               <div className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]">
-                <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
+                <h3 className="text-lg font-semibold text-[#10B981] mb-2">
                   Speaker 2
                 </h3>
                 <div className="max-h-[300px] overflow-y-auto">
@@ -458,15 +493,6 @@ function DebateContent() {
               <div className="prose max-w-none">
                 <p className="text-[#E5E7EB]">{debateSummary.analysis}</p>
               </div>
-            </div>
-
-            <div className="flex justify-center">
-              <Button
-                onClick={() => setDebateSummary(null)}
-                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
-              >
-                Start New Debate
-              </Button>
             </div>
           </div>
         ) : (

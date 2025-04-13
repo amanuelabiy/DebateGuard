@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Create a prompt that asks for a structured JSON response
     const prompt = `Analyze this debate transcript segment for logical fallacies: "${transcriptSegment}"
-
+If there are no fallacies, return "No logical fallacies detected."
 Return a JSON response in this exact format:
 {
   "fallacies": [
@@ -31,6 +31,7 @@ Return a JSON response in this exact format:
     }
   ]
 }
+If no fallacies are found, respond with "No logical fallacies detected."
 
 Be concise and focus only on clear logical fallacies.`;
 
@@ -69,41 +70,3 @@ Be concise and focus only on clear logical fallacies.`;
   }
 }
 
-async function analyzeTranscript(transcript: string, context: any) {
-  const prompt = `
-You are a debate analysis assistant. Analyze the following transcript for logical fallacies.
-
-For each fallacy you find:
-1. Name the fallacy
-2. Quote the exact sentence that triggered it
-3. Explain how to fix it
-
-Format your response as:
-FALLACY: [Name of fallacy]
-TRIGGER: [Exact quote]
-FIX: [How to fix it]
-
-If no fallacies are found, respond with "No logical fallacies detected."
-
-Transcript:
-${transcript}
-`;
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: "You are a debate analysis assistant that identifies logical fallacies in arguments.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    temperature: 0.3,
-    max_tokens: 1000,
-  });
-
-  return response.choices[0].message.content;
-}

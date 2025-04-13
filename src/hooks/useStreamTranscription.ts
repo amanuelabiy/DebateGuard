@@ -50,14 +50,30 @@ interface SpeechRecognition extends EventTarget {
 
 export const useStreamTranscription = (isRecording: boolean = false) => {
   const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
-  const [currentSegment, setCurrentSegment] = useState('');
+  const [currentSegment, setCurrentSegment] = useState<string>('');
+  const [currentSpeaker, setCurrentSpeaker] = useState<number>(1);
+  const [speaker1Transcript, setSpeaker1Transcript] = useState<TranscriptSegment[]>([]);
+  const [speaker2Transcript, setSpeaker2Transcript] = useState<TranscriptSegment[]>([]);
+  const [currentTurnText, setCurrentTurnText] = useState<string>('');
   const call = useCall();
   const { useParticipants } = useCallStateHooks();
-  const participants = useParticipants();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [turnSegment, setTurnSegment] = useState<string>('');
+
+  // Log current turn text every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('Current turn text:', currentTurnText);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [currentTurnText]);
 
   useEffect(() => {
     if (!call || !isRecording) return;
+
+    let restartTimeout: NodeJS.Timeout | null = null;
+    let isRestarting = false;
 
     // Initialize speech recognition
     const initializeSpeechRecognition = () => {
@@ -79,30 +95,66 @@ export const useStreamTranscription = (isRecording: boolean = false) => {
               finalTranscript += transcript + ' ';
             } else {
               interimTranscript += transcript;
+              setTurnSegment(transcript);
             }
           }
 
-          // Update current segment with interim results
-          setCurrentSegment(interimTranscript || finalTranscript);
-
-          // If we have final results, add to transcript history
+          // Add final transcript to the current turn's accumulated text
           if (finalTranscript.trim()) {
-            const newSegment: TranscriptSegment = {
-              speakerId: 'current',
-              text: finalTranscript.trim(),
-              timestamp: new Date().toISOString()
-            };
-            
-            setTranscript(prev => [...prev, newSegment]);
+            setCurrentTurnText(prev => {
+              const newText = prev + (prev ? ' ' : '') + finalTranscript.trim();
+              // Update the display with the accumulated text
+              setCurrentSegment(newText);
+              return newText;
+            });
+          } else {
+            // Show interim results appended to accumulated text
+            setCurrentSegment(currentTurnText + (interimTranscript ? ' ' + interimTranscript : ''));
+          }
+
+          // Clear any pending restart timeout since we got results
+          if (restartTimeout) {
+            clearTimeout(restartTimeout);
+            restartTimeout = null;
           }
         };
 
-        recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
-          console.error('Speech recognition error:', event.error);
-        };
+        if (recognitionRef.current) {
+          recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+            console.error('Speech recognition error:', event.error);
+            // Only restart on specific errors, not on timeout/no-speech
+            if (event.error !== 'no-speech' && isRecording && !isRestarting) {
+              console.log('Restarting speech recognition after error:', event.error);
+              isRestarting = true;
+              setTimeout(() => {
+                if (recognitionRef.current) {
+                  recognitionRef.current.start();
+                }
+                isRestarting = false;
+              }, 1000);
+            }
+          };
 
-        // Start recognition
-        recognitionRef.current.start();
+          // Add onend handler to restart recognition when it stops
+          recognitionRef.current.onend = () => {
+            console.log('Speech recognition ended');
+            // Only restart if we're still supposed to be recording and not already restarting
+            if (isRecording && !isRestarting) {
+              // Set a timeout to restart after 5 seconds of silence
+              restartTimeout = setTimeout(() => {
+                console.log('Restarting speech recognition after silence');
+                isRestarting = true;
+                if (recognitionRef.current) {
+                  recognitionRef.current.start();
+                }
+                isRestarting = false;
+              }, 5000);
+            }
+          };
+
+          // Start recognition
+          recognitionRef.current.start();
+        }
       }
     };
 
@@ -111,11 +163,45 @@ export const useStreamTranscription = (isRecording: boolean = false) => {
 
     // Cleanup
     return () => {
+      if (restartTimeout) {
+        clearTimeout(restartTimeout);
+      }
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
   }, [call, isRecording]);
+
+  const getTurnSegment = () => {
+    return turnSegment;
+  };
+
+  // Function to switch speakers and append current turn to transcript
+  const switchSpeaker = (newSpeaker: number) => {
+    if (currentTurnText.trim()) {
+      const newSegment: TranscriptSegment = {
+        speakerId: currentSpeaker.toString(),
+        text: currentTurnText.trim(),
+        timestamp: new Date().toISOString()
+      };
+
+      // Add to speaker's transcript history
+      if (currentSpeaker === 1) {
+        setSpeaker1Transcript(prev => [...prev, newSegment]);
+      } else {
+        setSpeaker2Transcript(prev => [...prev, newSegment]);
+      }
+      
+      // Add to main transcript
+      setTranscript(prev => [...prev, newSegment]);
+    }
+    
+    // Clear all text states
+    setCurrentTurnText('');
+    setCurrentSegment('');
+    setTurnSegment('');
+    setCurrentSpeaker(newSpeaker);
+  };
 
   // Function to assign speaker ID to a segment
   const assignSpeakerToSegment = (segment: TranscriptSegment, speakerId: string) => {
@@ -134,6 +220,7 @@ export const useStreamTranscription = (isRecording: boolean = false) => {
   const clearTranscript = () => {
     setTranscript([]);
     setCurrentSegment('');
+    setCurrentTurnText('');
   };
 
   return {
@@ -141,7 +228,9 @@ export const useStreamTranscription = (isRecording: boolean = false) => {
     currentSegment,
     getAllTranscripts,
     clearTranscript,
-    assignSpeakerToSegment
+    assignSpeakerToSegment,
+    getTurnSegment,
+    switchSpeaker
   };
 };
 

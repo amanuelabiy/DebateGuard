@@ -15,6 +15,7 @@ import { Button } from "./ui/button";
 function MeetingSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
   const [isCameraDisabled, setIsCameraDisabled] = useState(true);
   const [isMicDisabled, setIsMicDisabled] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const { useMicrophoneState } = useCallStateHooks();
   const call = useCall();
   const { mediaStream } = useMicrophoneState();

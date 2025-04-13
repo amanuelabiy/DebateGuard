@@ -25,7 +25,7 @@ import {
 import { Button } from "./ui/button";
 import { LayoutListIcon, UsersIcon } from "lucide-react";
 import EndCallButton from "./EndCallButton";
-import DebatePage from "@/app/debate/page";
+import DebateContent from "./DebateContent";
 
 
 function MeetingRoom() {
@@ -104,7 +104,7 @@ function MeetingRoom() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={65} minSize={25}>
-          <DebatePage/>
+          <DebateContent/>
           <h1>Argument Analysis Goes here</h1>
         </ResizablePanel>
       </ResizablePanelGroup>

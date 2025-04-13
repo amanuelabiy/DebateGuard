@@ -26,6 +26,18 @@ interface Fallacy {
   timestamp: string;
 }
 
+interface DebateSummary {
+  speaker1Transcript: string;
+  speaker2Transcript: string;
+  fallacies: {
+    speaker: string;
+    fallacy: string;
+    fix: string;
+    timestamp: string;
+    description: string;
+  }[];
+}
+
 function AudioLevelMeter({ level }: { level: number }) {
   // Normalize the level to 0-100
   const normalizedLevel = Math.min(100, Math.max(0, (level / 255) * 100));
@@ -45,6 +57,9 @@ function DebateContent() {
   const [isRecording, setIsRecording] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [initialTime, setInitialTime] = useState(300); // Initial time in seconds
+  const [isDebateActive, setIsDebateActive] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [speaker1Transcript, setSpeaker1Transcript] = useState<
     TranscriptSegment[]
   >([]);
@@ -52,18 +67,10 @@ function DebateContent() {
     TranscriptSegment[]
   >([]);
   const [fallacies, setFallacies] = useState<Fallacy[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentSegment, setCurrentSegment] = useState("");
-  const [showSettings, setShowSettings] = useState(true);
-  const [isDebateActive, setIsDebateActive] = useState(false);
-  const [debateSummary, setDebateSummary] = useState<{
-    speaker1Transcript: string;
-    speaker2Transcript: string;
-    fallacies: Array<{ speaker: string; fallacy: string; fix: string }>;
-  } | null>(null);
+  const [debateSummary, setDebateSummary] = useState<DebateSummary | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [audioLevels, setAudioLevels] = useState<number[]>([0, 0]);
+
 
   // Use the Stream transcription hook
   const {
@@ -72,12 +79,15 @@ function DebateContent() {
     getAllTranscripts: getStreamTranscripts,
     clearTranscript: clearStreamTranscript,
     assignSpeakerToSegment,
+    switchSpeaker: switchStreamSpeaker,
   } = useStreamTranscription(isRecording);
 
   // Update current segment from Stream transcription
   useEffect(() => {
     if (streamCurrentSegment) {
+    
       setCurrentSegment(streamCurrentSegment);
+      console.log("Current segment:", currentSegment);
     }
   }, [streamCurrentSegment]);
 
@@ -114,23 +124,7 @@ function DebateContent() {
     };
   }, [isRecording, timeLeft]);
 
-  // Effect to handle Stream transcription updates
-  useEffect(() => {
-    if (currentSpeaker.toString() && currentSegment) {
-      const newSegment: TranscriptSegment = {
-        text: currentSegment,
-        speakerId: currentSpeaker.toString(),
-        timestamp: new Date().toISOString(),
-      };
 
-      if (currentSpeaker === 1) {
-        setSpeaker1Transcript((prev) => [...prev, newSegment]);
-      } else {
-        setSpeaker2Transcript((prev) => [...prev, newSegment]);
-      }
-      analyzeSegment(currentSegment);
-    }
-  }, [currentSpeaker, currentSegment]);
 
   const startRecording = async () => {
     try {
@@ -168,13 +162,16 @@ function DebateContent() {
     }
   };
 
-  const switchSpeaker = () => {
+  const switchSpeaker = async () => {
     if (currentSegment.trim()) {
       const newSegment: TranscriptSegment = {
         text: currentSegment,
         speakerId: currentSpeaker.toString(),
         timestamp: new Date().toISOString(),
       };
+
+      // Wait for 2 seconds before appending the transcript
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       if (currentSpeaker === 1) {
         setSpeaker1Transcript((prev) => [...prev, newSegment]);
@@ -184,14 +181,19 @@ function DebateContent() {
       analyzeSegment(currentSegment);
     }
 
-    setCurrentSegment("");
     const newSpeaker = currentSpeaker === 1 ? 2 : 1;
+    switchStreamSpeaker(newSpeaker); // Use the hook's switchSpeaker function
     setCurrentSpeaker(newSpeaker);
     setTimeLeft(initialTime);
   };
 
   const analyzeSegment = async (text: string) => {
     if (!text.trim()) return;
+
+    if (text.length < 20) {
+      console.log("Text too short for analysis!");
+      return;
+    }
 
     console.log("Analyzing segment:", text);
     setIsAnalyzing(true);
@@ -225,7 +227,7 @@ function DebateContent() {
         data.analysis.fallacies &&
         data.analysis.fallacies.length > 0
       ) {
-        // Convert the API response to our Fallacy format
+        // Convert the API response to our Fallacy format and append to existing fallacies
         const newFallacies: Fallacy[] = data.analysis.fallacies.map(
           (fallacy: any) => ({
             type: fallacy.type,
@@ -236,11 +238,11 @@ function DebateContent() {
           })
         );
 
-        console.log("Setting new fallacies:", newFallacies);
-        setFallacies(newFallacies);
+        console.log("Appending new fallacies:", newFallacies);
+        setFallacies(prev => [...prev, ...newFallacies]);
       } else {
-        // No fallacies detected
-        setFallacies([]);
+        // No fallacies detected in this segment, but keep existing fallacies
+        console.log("No fallacies detected in this segment");
       }
     } catch (error) {
       console.error("Error analyzing transcript:", error);
@@ -296,6 +298,9 @@ function DebateContent() {
         stopRecording();
       }
 
+      // Stop listening by setting isRecording to false
+      setIsRecording(false);
+
       // Save final segment if exists
       if (currentSegment.trim()) {
         const timestamp = new Date().toISOString();
@@ -320,18 +325,32 @@ function DebateContent() {
         }
       }
 
-      // Collect all fallacies
+      // Show loading state
+      setIsAnalyzing(true);
+      
+      // Wait for 3 seconds before showing all fallacies
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Collect all fallacies with proper formatting
       const allFallacies = fallacies.map((item) => ({
-        speaker: item.speakerId,
+        speaker: `Speaker ${item.speakerId}`,
         fallacy: item.type,
         fix: item.fix,
+        timestamp: item.timestamp,
+        description: item.description
       }));
 
-      // Create debate summary
-      const summary = {
-        speaker1Transcript: speaker1Transcript.map((seg) => seg.text).join(" "),
-        speaker2Transcript: speaker2Transcript.map((seg) => seg.text).join(" "),
-        fallacies: allFallacies,
+      // Create debate summary with properly ordered transcripts
+      const summary: DebateSummary = {
+        speaker1Transcript: speaker1Transcript
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+          .map((seg) => seg.text)
+          .join(" "),
+        speaker2Transcript: speaker2Transcript
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+          .map((seg) => seg.text)
+          .join(" "),
+        fallacies: allFallacies.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
       };
 
       setDebateSummary(summary);
@@ -344,8 +363,8 @@ function DebateContent() {
         },
         body: JSON.stringify({
           transcript: {
-            speaker1: speaker1Transcript,
-            speaker2: speaker2Transcript,
+            speaker1: speaker1Transcript.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
+            speaker2: speaker2Transcript.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
           },
           analysis: allFallacies,
           participants: ["Speaker 1", "Speaker 2"],
@@ -363,30 +382,15 @@ function DebateContent() {
       toast.success("Debate saved successfully");
       setIsDebateActive(false);
       setShowSettings(true);
+      setIsAnalyzing(false);
     } catch (error) {
       console.error("Error ending debate:", error);
       toast.error("Failed to save debate");
+      setIsAnalyzing(false);
     }
   };
 
-  // Update audio levels
-  const updateAudioLevel = (level: number) => {
-    setAudioLevels((prev) => {
-      const newLevels = [...prev];
-      newLevels[currentSpeaker - 1] = level;
-      return newLevels;
-    });
-  };
-
-  // Update audio levels
-  const updateAudioLevel = (level: number) => {
-    setAudioLevels((prev) => {
-      const newLevels = [...prev];
-      newLevels[currentSpeaker - 1] = level;
-      return newLevels;
-    });
-  };
-
+ 
   return (
     <div className="flex h-screen">
       {/* Left side - Video call (20% width) */}
@@ -467,39 +471,37 @@ function DebateContent() {
               </div>
             </div>
 
-            <div className="bg-red-50 p-4 rounded-lg border border-red-200 mb-6">
-              <h3 className="text-lg font-semibold text-red-700 mb-2">
-                Detected Fallacies
-              </h3>
-              <div className="max-h-[300px] overflow-y-auto">
-                {fallacies.length > 0 ? (
-                  fallacies.map((fallacy, index) => (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">All Detected Fallacies</h3>
+              {debateSummary?.fallacies && debateSummary.fallacies.length > 0 ? (
+                <div className="space-y-2">
+                  {debateSummary.fallacies.map((fallacy, index) => (
                     <div
                       key={index}
-                      className="mb-4 pb-4 border-b border-red-200"
+                      className="p-3 bg-red-50 border border-red-200 rounded-lg"
                     >
-                      <div className="flex justify-between">
+                      <div className="flex items-center justify-between">
                         <span className="font-medium text-red-700">
-                          Speaker {fallacy.speakerId}
+                          {fallacy.fallacy}
                         </span>
-                        <span className="text-sm text-gray-500">
-                          {new Date(fallacy.timestamp).toLocaleTimeString()}
+                        <span className="text-sm text-red-500">
+                          {fallacy.speaker}
                         </span>
                       </div>
-                      <p className="text-gray-800 mt-1">
-                        <strong>{fallacy.type}:</strong> {fallacy.description}
+                      <p className="text-sm text-red-600 mt-1">
+                        {fallacy.description}
                       </p>
-                      <p className="text-green-700 mt-1">
-                        <strong>Fix:</strong> {fallacy.fix}
+                      <p className="text-sm text-red-500 mt-1">
+                        Suggested fix: {fallacy.fix}
                       </p>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-gray-600">
-                    No fallacies detected in this debate.
-                  </p>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-700">No fallacies were detected during this debate.</p>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-center">
@@ -640,41 +642,31 @@ function DebateContent() {
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-red-700 mb-2">
-                    Detected Fallacies
-                  </h3>
-                  <div className="bg-red-50 p-4 rounded-md max-h-[200px] overflow-y-auto border border-red-200">
-                    {fallacies.length > 0 ? (
-                      fallacies.map((fallacy, index) => (
-                        <div
-                          key={index}
-                          className="border-b border-red-200 pb-2 mb-2"
-                        >
-                          <div className="flex justify-between">
-                            <span className="font-medium text-red-700">
-                              Speaker {fallacy.speakerId}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {new Date(fallacy.timestamp).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          <p className="text-gray-800">
-                            <strong>{fallacy.type}:</strong>{" "}
-                            {fallacy.description}
-                          </p>
-                          <p className="text-green-700 text-sm">
-                            <strong>Fix:</strong> {fallacy.fix}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-600 italic">
-                        No fallacies detected yet.
+                {/* Show only the latest fallacy during active debate */}
+                {fallacies.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-red-700 mb-2">
+                      Latest Fallacy Detected
+                    </h3>
+                    <div className="bg-red-50 p-4 rounded-md border border-red-200">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-red-700">
+                          Speaker {fallacies[fallacies.length - 1].speakerId}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(fallacies[fallacies.length - 1].timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-800">
+                        <strong>{fallacies[fallacies.length - 1].type}:</strong>{" "}
+                        {fallacies[fallacies.length - 1].description}
                       </p>
-                    )}
+                      <p className="text-green-700 text-sm">
+                        <strong>Fix:</strong> {fallacies[fallacies.length - 1].fix}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -684,10 +676,4 @@ function DebateContent() {
   );
 }
 
-export default function DebatePage() {
-  return (
-    <DebateStreamProvider>
-      <DebateContent />
-    </DebateStreamProvider>
-  );
-}
+export default DebateContent;

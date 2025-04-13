@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 
 function EndCallButton() {
-  return <Button variant={"destructive"}>End Meeting</Button>;
+  return null; // Return null to remove the button completely
 }
 export default EndCallButton;

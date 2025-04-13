@@ -63,7 +63,7 @@ export default function Navbar() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link
-                    href="/transcript"
+                    href="/dashboard"
                     className="text-[#E5E7EB] hover:text-[#10B981] transition-colors"
                   >
                     Try It
@@ -170,7 +170,7 @@ export default function Navbar() {
             </motion.a>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                href="/transcript"
+                href="/dashboard"
                 className="text-[#E5E7EB] hover:text-[#10B981] transition-colors"
               >
                 Try It

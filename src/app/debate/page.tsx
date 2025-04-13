@@ -27,6 +27,17 @@ interface Fallacy {
   timestamp: string;
 }
 
+type DebateSummary = {
+  speaker1Transcript: string;
+  speaker2Transcript: string;
+  fallacies: {
+    speaker: string;
+    fallacy: string;
+    fix: string;
+  }[];
+  analysis: string;
+};
+
 function AudioLevelMeter({ level }: { level: number }) {
   // Normalize the level to 0-100
   const normalizedLevel = Math.min(100, Math.max(0, (level / 255) * 100));
@@ -46,6 +57,9 @@ function DebateContent() {
   const [isRecording, setIsRecording] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [initialTime, setInitialTime] = useState(300); // Initial time in seconds
+  const [timeUnit, setTimeUnit] = useState<"minutes" | "seconds">("minutes");
+  const [timeInput, setTimeInput] = useState(5); // Default 5 minutes
+  const [customTime, setCustomTime] = useState("");
   const [speaker1Transcript, setSpeaker1Transcript] = useState<
     TranscriptSegment[]
   >([]);
@@ -57,11 +71,9 @@ function DebateContent() {
   const [currentSegment, setCurrentSegment] = useState("");
   const [showSettings, setShowSettings] = useState(true);
   const [isDebateActive, setIsDebateActive] = useState(false);
-  const [debateSummary, setDebateSummary] = useState<{
-    speaker1Transcript: string;
-    speaker2Transcript: string;
-    fallacies: Array<{ speaker: string; fallacy: string; fix: string }>;
-  } | null>(null);
+  const [debateSummary, setDebateSummary] = useState<DebateSummary | null>(
+    null
+  );
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [audioLevels, setAudioLevels] = useState<number[]>([0, 0]);
@@ -256,10 +268,31 @@ function DebateContent() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleTimeChange = (minutes: number) => {
-    console.log("Changing time to:", minutes, "minutes");
-    setInitialTime(minutes * 60);
-    setTimeLeft(minutes * 60);
+  const handleTimeChange = (value: number, unit: "minutes" | "seconds") => {
+    const seconds = unit === "minutes" ? value * 60 : value;
+    setInitialTime(seconds);
+    setTimeLeft(seconds);
+    setTimeUnit(unit);
+    setTimeInput(value);
+  };
+
+  const handleCustomTimeChange = (value: string) => {
+    setCustomTime(value);
+    if (value && !isNaN(Number(value))) {
+      const seconds =
+        timeUnit === "minutes" ? Number(value) * 60 : Number(value);
+      setInitialTime(seconds);
+      setTimeLeft(seconds);
+    }
+  };
+
+  const applyPresetTime = (preset: number, unit: "minutes" | "seconds") => {
+    const seconds = unit === "minutes" ? preset * 60 : preset;
+    setInitialTime(seconds);
+    setTimeLeft(seconds);
+    setTimeUnit(unit);
+    setTimeInput(preset);
+    setCustomTime("");
   };
 
   // Get the current speaker's transcript
@@ -329,10 +362,11 @@ function DebateContent() {
       }));
 
       // Create debate summary
-      const summary = {
+      const summary: DebateSummary = {
         speaker1Transcript: speaker1Transcript.map((seg) => seg.text).join(" "),
         speaker2Transcript: speaker2Transcript.map((seg) => seg.text).join(" "),
         fallacies: allFallacies,
+        analysis: "Analysis not provided in the API response",
       };
 
       setDebateSummary(summary);
@@ -368,163 +402,123 @@ function DebateContent() {
     }
   };
 
-  // Update audio levels
-  const updateAudioLevel = (level: number) => {
-    setAudioLevels((prev) => {
-      const newLevels = [...prev];
-      newLevels[currentSpeaker - 1] = level;
-      return newLevels;
-    });
+  const startNewDebate = () => {
+    // Reset all state variables
+    setCurrentSpeaker(1);
+    setIsRecording(false);
+    setTimeLeft(initialTime);
+    setSpeaker1Transcript([]);
+    setSpeaker2Transcript([]);
+    setFallacies([]);
+    setIsAnalyzing(false);
+    setCurrentSegment("");
+    setShowSettings(true);
+    setIsDebateActive(false);
+    setDebateSummary(null);
+    setCustomTime("");
+
+    // Clear any existing timers
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Clear stream transcript
+    clearStreamTranscript();
+
+    toast.success("New debate started");
   };
 
   return (
     <div className="flex h-screen">
-      {/* Left side - Video call (20% width) */}
-      <div className="w-1/5 bg-gray-900 p-4 flex flex-col">
-        <div className="flex-1 flex flex-col">
-          {/* Main speaker video */}
-          <div className="bg-gray-800 rounded-lg mb-4 aspect-video flex items-center justify-center">
-            <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
-              {currentSpeaker === 1 ? "S1" : "S2"}
-            </div>
-          </div>
-
-          {/* Secondary speaker video */}
-          <div className="bg-gray-800 rounded-lg aspect-video flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-xl font-bold">
-              {currentSpeaker === 1 ? "S2" : "S1"}
-            </div>
-          </div>
-        </div>
-
-        {/* Call controls */}
-        <div className="flex justify-center space-x-4 py-4">
-          <button className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
-            <Mic size={20} />
-          </button>
-          <button className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
-            <Settings size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Right side - Fallacy checker and transcription (80% width) */}
-      <div className="w-4/5 bg-white p-6 overflow-y-auto">
+      {/* Main content - Full width */}
+      <div className="w-full bg-[#0D1117] p-6 overflow-y-auto">
         {debateSummary ? (
           // Debate summary view
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-blue-700 mb-6">
-              Debate Summary
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#E5E7EB]">
+                Debate Summary
+              </h2>
+              <Button
+                onClick={startNewDebate}
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
+              >
+                Start New Debate
+              </Button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-700 mb-2">
+              <div className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]">
+                <h3 className="text-lg font-semibold text-[#2563EB] mb-2">
                   Speaker 1
                 </h3>
                 <div className="max-h-[300px] overflow-y-auto">
                   {speaker1Transcript.map((segment, index) => (
                     <div
                       key={index}
-                      className="mb-2 pb-2 border-b border-blue-200"
+                      className="mb-2 pb-2 border-b border-[#2C3E50]"
                     >
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-[#9CA3AF]">
                         {new Date(segment.timestamp).toLocaleTimeString()}
                       </p>
-                      <p className="text-gray-800">{segment.text}</p>
+                      <p className="text-[#E5E7EB]">{segment.text}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h3 className="text-lg font-semibold text-green-700 mb-2">
+              <div className="bg-[#1F2937] p-4 rounded-lg border border-[#2C3E50]">
+                <h3 className="text-lg font-semibold text-[#10B981] mb-2">
                   Speaker 2
                 </h3>
                 <div className="max-h-[300px] overflow-y-auto">
                   {speaker2Transcript.map((segment, index) => (
                     <div
                       key={index}
-                      className="mb-2 pb-2 border-b border-green-200"
+                      className="mb-2 pb-2 border-b border-[#2C3E50]"
                     >
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-[#9CA3AF]">
                         {new Date(segment.timestamp).toLocaleTimeString()}
                       </p>
-                      <p className="text-gray-800">{segment.text}</p>
+                      <p className="text-[#E5E7EB]">{segment.text}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="bg-red-50 p-4 rounded-lg border border-red-200 mb-6">
-              <h3 className="text-lg font-semibold text-red-700 mb-2">
-                Detected Fallacies
+            <div className="bg-[#1F2937] p-6 rounded-lg border border-[#2C3E50] mb-8">
+              <h3 className="text-xl font-semibold text-[#E5E7EB] mb-4">
+                Debate Analysis
               </h3>
-              <div className="max-h-[300px] overflow-y-auto">
-                {fallacies.length > 0 ? (
-                  fallacies.map((fallacy, index) => (
-                    <div
-                      key={index}
-                      className="mb-4 pb-4 border-b border-red-200"
-                    >
-                      <div className="flex justify-between">
-                        <span className="font-medium text-red-700">
-                          Speaker {fallacy.speakerId}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {new Date(fallacy.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <p className="text-gray-800 mt-1">
-                        <strong>{fallacy.type}:</strong> {fallacy.description}
-                      </p>
-                      <p className="text-green-700 mt-1">
-                        <strong>Fix:</strong> {fallacy.fix}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-600">
-                    No fallacies detected in this debate.
-                  </p>
-                )}
+              <div className="prose max-w-none">
+                <p className="text-[#E5E7EB]">{debateSummary.analysis}</p>
               </div>
-            </div>
-
-            <div className="flex justify-center">
-              <Button
-                onClick={() => {
-                  setDebateSummary(null);
-                  setSpeaker1Transcript([]);
-                  setSpeaker2Transcript([]);
-                  setFallacies([]);
-                  setCurrentSegment("");
-                  setTimeLeft(initialTime);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Start New Debate
-              </Button>
             </div>
           </div>
         ) : (
           // Active debate view
           <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-blue-700">
-                Debate Session
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#E5E7EB] mb-4 md:mb-0">
+                Current Speaker:{" "}
+                {currentSpeaker === 1 ? "Speaker 1" : "Speaker 2"}
               </h2>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center bg-blue-100 px-3 py-1 rounded-full">
-                  <Timer className="h-4 w-4 text-blue-700 mr-1" />
-                  <span className="text-blue-700 font-medium">
-                    {formatTime(timeLeft)}
-                  </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-xl font-bold bg-[#1F2937] text-[#E5E7EB] px-3 py-1 rounded-md border border-[#2C3E50]">
+                  {formatTime(timeLeft)}
                 </div>
                 <Button
+                  onClick={switchSpeaker}
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
+                  disabled={!isRecording}
+                >
+                  Switch Speaker
+                </Button>
+                <Button
                   onClick={endDebate}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-[#E5E7EB]"
                 >
                   End Debate
                 </Button>
@@ -536,24 +530,24 @@ function DebateContent() {
               <div>
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-semibold text-blue-700">
+                    <h3 className="text-lg font-semibold text-[#E5E7EB]">
                       Controls
                     </h3>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={isRecording ? stopRecording : startRecording}
                       className={
                         isRecording
-                          ? "bg-red-600 hover:bg-red-700 text-white"
-                          : "bg-green-600 hover:bg-green-700 text-white"
+                          ? "bg-red-600 hover:bg-red-700 text-[#E5E7EB]"
+                          : "bg-[#10B981] hover:bg-[#059669] text-[#E5E7EB]"
                       }
                     >
                       {isRecording ? "Stop Recording" : "Start Recording"}
                     </Button>
                     <Button
                       onClick={switchSpeaker}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-[#2563EB] hover:bg-[#1D4ED8] text-[#E5E7EB]"
                       disabled={!isRecording}
                     >
                       Switch Speaker
@@ -562,39 +556,69 @@ function DebateContent() {
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Live Transcription
                   </h3>
-                  <div className="bg-blue-50 p-4 rounded-md min-h-[100px] border border-blue-200">
-                    <p className="text-gray-800">
+                  <div className="bg-[#1F2937] p-4 rounded-md min-h-[100px] border border-[#2C3E50]">
+                    <p className="text-[#E5E7EB]">
                       {currentSegment || "Waiting for speech..."}
                     </p>
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Timer Settings
                   </h3>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => handleTimeChange(3)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
-                    >
-                      3 min
-                    </Button>
-                    <Button
-                      onClick={() => handleTimeChange(5)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
-                    >
-                      5 min
-                    </Button>
-                    <Button
-                      onClick={() => handleTimeChange(10)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
-                    >
-                      10 min
-                    </Button>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => applyPresetTime(30, "seconds")}
+                        className="bg-[#1F2937] hover:bg-[#374151] text-[#E5E7EB] border border-[#2C3E50]"
+                      >
+                        30s
+                      </Button>
+                      <Button
+                        onClick={() => applyPresetTime(1, "minutes")}
+                        className="bg-[#1F2937] hover:bg-[#374151] text-[#E5E7EB] border border-[#2C3E50]"
+                      >
+                        1m
+                      </Button>
+                      <Button
+                        onClick={() => applyPresetTime(5, "minutes")}
+                        className="bg-[#1F2937] hover:bg-[#374151] text-[#E5E7EB] border border-[#2C3E50]"
+                      >
+                        5m
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <input
+                        type="number"
+                        min="1"
+                        value={customTime}
+                        onChange={(e) => handleCustomTimeChange(e.target.value)}
+                        placeholder="Custom time"
+                        className="w-32 p-2 border rounded bg-[#1F2937] text-[#E5E7EB] border-[#2C3E50] placeholder-[#9CA3AF]"
+                      />
+                      <select
+                        value={timeUnit}
+                        onChange={(e) => {
+                          setTimeUnit(e.target.value as "minutes" | "seconds");
+                          if (customTime && !isNaN(Number(customTime))) {
+                            const seconds =
+                              e.target.value === "minutes"
+                                ? Number(customTime) * 60
+                                : Number(customTime);
+                            setInitialTime(seconds);
+                            setTimeLeft(seconds);
+                          }
+                        }}
+                        className="p-2 border rounded bg-[#1F2937] text-[#E5E7EB] border-[#2C3E50]"
+                      >
+                        <option value="minutes">Minutes</option>
+                        <option value="seconds">Seconds</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -602,65 +626,65 @@ function DebateContent() {
               {/* Right column - Transcript history and fallacies */}
               <div>
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Transcript History
                   </h3>
-                  <div className="bg-gray-50 p-4 rounded-md max-h-[300px] overflow-y-auto border border-gray-200">
+                  <div className="bg-[#1F2937] p-4 rounded-md max-h-[300px] overflow-y-auto border border-[#2C3E50]">
                     {getAllTranscripts().map((segment, index) => (
-                      <div key={index} className="border-b pb-2 mb-2">
-                        <div className="flex justify-between">
-                          <p className="font-medium text-blue-700">
-                            {segment.speakerId === "1"
-                              ? "Speaker 1"
-                              : "Speaker 2"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(segment.timestamp).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <p className="text-gray-800">{segment.text}</p>
+                      <div
+                        key={index}
+                        className="border-b pb-2 border-[#2C3E50]"
+                      >
+                        <p
+                          className={`font-medium ${
+                            segment.speakerId === "1"
+                              ? "text-[#2563EB]"
+                              : "text-[#10B981]"
+                          }`}
+                        >
+                          {segment.speakerId === "1"
+                            ? "Speaker 1"
+                            : "Speaker 2"}
+                        </p>
+                        <p className="text-[#E5E7EB]">{segment.text}</p>
                       </div>
                     ))}
-                    {getAllTranscripts().length === 0 && (
-                      <p className="text-gray-500 italic">
-                        No transcript yet. Start recording to see transcriptions
-                        here.
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-red-700 mb-2">
+                <div>
+                  <h3 className="text-lg font-semibold text-[#E5E7EB] mb-2">
                     Detected Fallacies
                   </h3>
-                  <div className="bg-red-50 p-4 rounded-md max-h-[200px] overflow-y-auto border border-red-200">
+                  <div className="bg-[#1F2937] p-4 rounded-md border border-[#2C3E50]">
                     {fallacies.length > 0 ? (
-                      fallacies.map((fallacy, index) => (
-                        <div
-                          key={index}
-                          className="border-b border-red-200 pb-2 mb-2"
-                        >
-                          <div className="flex justify-between">
-                            <span className="font-medium text-red-700">
-                              Speaker {fallacy.speakerId}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {new Date(fallacy.timestamp).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          <p className="text-gray-800">
-                            <strong>{fallacy.type}:</strong>{" "}
-                            {fallacy.description}
-                          </p>
-                          <p className="text-green-700 text-sm">
-                            <strong>Fix:</strong> {fallacy.fix}
-                          </p>
-                        </div>
-                      ))
+                      <ul className="space-y-2">
+                        {fallacies.map((item, index) => (
+                          <li
+                            key={index}
+                            className="border-b pb-2 border-[#2C3E50]"
+                          >
+                            <p
+                              className={`font-medium ${
+                                item.speakerId === "1"
+                                  ? "text-[#2563EB]"
+                                  : "text-[#10B981]"
+                              }`}
+                            >
+                              {item.speakerId === "1"
+                                ? "Speaker 1"
+                                : "Speaker 2"}
+                            </p>
+                            <p className="text-red-400 font-semibold">
+                              Fallacy: {item.type}
+                            </p>
+                            <p className="text-[#10B981]">Fix: {item.fix}</p>
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
-                      <p className="text-gray-600 italic">
-                        No fallacies detected yet.
+                      <p className="text-[#9CA3AF]">
+                        No fallacies detected yet
                       </p>
                     )}
                   </div>

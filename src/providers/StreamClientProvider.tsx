@@ -5,15 +5,14 @@ import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 import { useUser } from "@clerk/nextjs";
 import Loader from "@/components/Loader";
 import { streamTokenProvider } from "@/actions/stream.actions";
-import { redirect } from "next/navigation";
-import { useRouter } from "next/navigation";
 
 const StreamClientProvider = ({ children }: { children: ReactNode }) => {
   const [streamVideoClient, setStreamVideoClient] =
     useState<StreamVideoClient>();
   const { user, isLoaded } = useUser();
 
-  const router = useRouter();
+  const fullName = user?.firstName || "" + " " + user?.lastName || "";
+  const name = user?.username || fullName || "Unknown User";
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -22,7 +21,7 @@ const StreamClientProvider = ({ children }: { children: ReactNode }) => {
       apiKey: process.env.NEXT_PUBLIC_STREAM_API_KEY!,
       user: {
         id: user?.id,
-        name: user?.firstName || "" + " " + user?.lastName || "" || user?.id,
+        name,
         image: user?.imageUrl,
       },
       tokenProvider: streamTokenProvider,

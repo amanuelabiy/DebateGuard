@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import DebateStreamProvider from "@/components/DebateStreamProvider";
 import { useStreamTranscription } from "@/hooks/useStreamTranscription";
+import axios from "axios";
 
 interface TranscriptSegment {
   speakerId: string;
@@ -336,29 +337,25 @@ function DebateContent() {
 
       setDebateSummary(summary);
 
+      const data = JSON.stringify({
+        transcript: {
+          speaker1: speaker1Transcript,
+          speaker2: speaker2Transcript,
+        },
+        analysis: allFallacies,
+        participants: ["Speaker 1", "Speaker 2"],
+        metadata: {
+          duration: initialTime - timeLeft,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
       // Save to API
-      const response = await fetch("/api/debate", {
-        method: "POST",
+      await axios.post("/api/debate", data, {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          transcript: {
-            speaker1: speaker1Transcript,
-            speaker2: speaker2Transcript,
-          },
-          analysis: allFallacies,
-          participants: ["Speaker 1", "Speaker 2"],
-          metadata: {
-            duration: initialTime - timeLeft,
-            timestamp: new Date().toISOString(),
-          },
-        }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save debate");
-      }
 
       toast.success("Debate saved successfully");
       setIsDebateActive(false);
@@ -366,16 +363,9 @@ function DebateContent() {
     } catch (error) {
       console.error("Error ending debate:", error);
       toast.error("Failed to save debate");
+      setIsDebateActive(false);
+      setShowSettings(true);
     }
-  };
-
-  // Update audio levels
-  const updateAudioLevel = (level: number) => {
-    setAudioLevels((prev) => {
-      const newLevels = [...prev];
-      newLevels[currentSpeaker - 1] = level;
-      return newLevels;
-    });
   };
 
   // Update audio levels

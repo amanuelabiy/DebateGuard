@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CallControls,
@@ -9,7 +9,6 @@ import {
   PaginatedGridLayout,
   SpeakerLayout,
   useCallStateHooks,
-  useCall
 } from "@stream-io/video-react-sdk";
 import {
   ResizableHandle,
@@ -23,10 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { LayoutListIcon, UsersIcon } from "lucide-react";
+import { LayoutListIcon, LoaderIcon, UsersIcon } from "lucide-react";
 import EndCallButton from "./EndCallButton";
 import DebatePage from "@/app/debate/page";
-
 
 function MeetingRoom() {
   const router = useRouter();
@@ -37,6 +35,11 @@ function MeetingRoom() {
   const callingState = useCallCallingState();
 
   if (callingState !== CallingState.JOINED) {
+    return (
+      <div className="h-96 flex items-center justify-center">
+        <LoaderIcon className="size-6 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -104,13 +107,12 @@ function MeetingRoom() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={65} minSize={25}>
-          <DebatePage/>
+          <DebatePage />
           <h1>Argument Analysis Goes here</h1>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   );
 }
-
 
 export default MeetingRoom;

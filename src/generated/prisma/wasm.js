@@ -141,7 +141,6 @@ exports.Prisma.DebateSessionScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   status: 'status',
-  participants: 'participants',
   metadata: 'metadata'
 };
 
@@ -149,7 +148,8 @@ exports.Prisma.TranscriptScalarFieldEnum = {
   id: 'id',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  content: 'content',
+  speaker1: 'speaker1',
+  speaker2: 'speaker2',
   debateSessionId: 'debateSessionId'
 };
 
@@ -157,7 +157,7 @@ exports.Prisma.AnalysisScalarFieldEnum = {
   id: 'id',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  content: 'content',
+  fallacies: 'fallacies',
   debateSessionId: 'debateSessionId'
 };
 
@@ -168,6 +168,10 @@ exports.Prisma.SortOrder = {
 
 exports.Prisma.NullableJsonNullValueInput = {
   DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
+exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 

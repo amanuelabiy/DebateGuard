@@ -28,6 +28,8 @@ model Conversation {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   segments  Segment[]
+
+  @@map("conversation")
 }
 
 model Segment {
@@ -36,33 +38,41 @@ model Segment {
   timestamp      DateTime
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
+
+  @@map("segment")
 }
 
 model DebateSession {
   id          String      @id @default(cuid())
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  status      String      @default("pending")
-  participants Json?
-  metadata    Json?
+  status      String      @default("completed")
+  metadata    Json?       // Will store duration, timestamp, and participants
   transcript  Transcript?
   analysis    Analysis?
+
+  @@map("debate_session")
 }
 
 model Transcript {
   id              String        @id @default(cuid())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  content         String        @db.Text
+  speaker1        Json         // Array of {text, speakerId, timestamp}
+  speaker2        Json         // Array of {text, speakerId, timestamp}
   debateSession   DebateSession @relation(fields: [debateSessionId], references: [id])
   debateSessionId String        @unique
+
+  @@map("transcript")
 }
 
 model Analysis {
   id              String        @id @default(cuid())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  content         String        @db.Text
+  fallacies       Json         // Array of {speaker, fallacy, fix}
   debateSession   DebateSession @relation(fields: [debateSessionId], references: [id])
   debateSessionId String        @unique
+
+  @@map("analysis")
 }
